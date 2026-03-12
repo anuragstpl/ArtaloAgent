@@ -1,0 +1,17 @@
+D:\Projects\ArtaloBot\src\ArtaloBot.Services\obj\Debug\net8.0\ArtaloBot.Services.csproj.AssemblyReference.cache
+D:\Projects\ArtaloBot\src\ArtaloBot.Services\obj\Debug\net8.0\ArtaloBot.Services.GeneratedMSBuildEditorConfig.editorconfig
+D:\Projects\ArtaloBot\src\ArtaloBot.Services\obj\Debug\net8.0\ArtaloBot.Services.AssemblyInfoInputs.cache
+D:\Projects\ArtaloBot\src\ArtaloBot.Services\obj\Debug\net8.0\ArtaloBot.Services.AssemblyInfo.cs
+D:\Projects\ArtaloBot\src\ArtaloBot.Services\obj\Debug\net8.0\ArtaloBot.Services.csproj.CoreCompileInputs.cache
+D:\Projects\ArtaloBot\src\ArtaloBot.Services\bin\Debug\net8.0\ArtaloBot.Services.deps.json
+D:\Projects\ArtaloBot\src\ArtaloBot.Services\bin\Debug\net8.0\ArtaloBot.Services.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.Services\bin\Debug\net8.0\ArtaloBot.Services.pdb
+D:\Projects\ArtaloBot\src\ArtaloBot.Services\bin\Debug\net8.0\ArtaloBot.Core.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.Services\bin\Debug\net8.0\ArtaloBot.Core.pdb
+D:\Projects\ArtaloBot\src\ArtaloBot.Services\obj\Debug\net8.0\ArtaloBo.8363D0DE.Up2Date
+D:\Projects\ArtaloBot\src\ArtaloBot.Services\obj\Debug\net8.0\ArtaloBot.Services.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.Services\obj\Debug\net8.0\refint\ArtaloBot.Services.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.Services\obj\Debug\net8.0\ArtaloBot.Services.pdb
+D:\Projects\ArtaloBot\src\ArtaloBot.Services\obj\Debug\net8.0\ref\ArtaloBot.Services.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.Services\bin\Debug\net8.0\ArtaloBot.Data.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.Services\bin\Debug\net8.0\ArtaloBot.Data.pdb

@@ -1,0 +1,17 @@
+D:\Projects\ArtaloBot\src\ArtaloBot.Data\bin\Debug\net8.0\ArtaloBot.Data.deps.json
+D:\Projects\ArtaloBot\src\ArtaloBot.Data\bin\Debug\net8.0\ArtaloBot.Data.runtimeconfig.json
+D:\Projects\ArtaloBot\src\ArtaloBot.Data\bin\Debug\net8.0\ArtaloBot.Data.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.Data\bin\Debug\net8.0\ArtaloBot.Data.pdb
+D:\Projects\ArtaloBot\src\ArtaloBot.Data\bin\Debug\net8.0\ArtaloBot.Core.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.Data\bin\Debug\net8.0\ArtaloBot.Core.pdb
+D:\Projects\ArtaloBot\src\ArtaloBot.Data\obj\Debug\net8.0\ArtaloBot.Data.csproj.AssemblyReference.cache
+D:\Projects\ArtaloBot\src\ArtaloBot.Data\obj\Debug\net8.0\ArtaloBot.Data.GeneratedMSBuildEditorConfig.editorconfig
+D:\Projects\ArtaloBot\src\ArtaloBot.Data\obj\Debug\net8.0\ArtaloBot.Data.AssemblyInfoInputs.cache
+D:\Projects\ArtaloBot\src\ArtaloBot.Data\obj\Debug\net8.0\ArtaloBot.Data.AssemblyInfo.cs
+D:\Projects\ArtaloBot\src\ArtaloBot.Data\obj\Debug\net8.0\ArtaloBot.Data.csproj.CoreCompileInputs.cache
+D:\Projects\ArtaloBot\src\ArtaloBot.Data\obj\Debug\net8.0\ArtaloBo.B6F8A1B2.Up2Date
+D:\Projects\ArtaloBot\src\ArtaloBot.Data\obj\Debug\net8.0\ArtaloBot.Data.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.Data\obj\Debug\net8.0\refint\ArtaloBot.Data.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.Data\obj\Debug\net8.0\ArtaloBot.Data.pdb
+D:\Projects\ArtaloBot\src\ArtaloBot.Data\obj\Debug\net8.0\ArtaloBot.Data.genruntimeconfig.cache
+D:\Projects\ArtaloBot\src\ArtaloBot.Data\obj\Debug\net8.0\ref\ArtaloBot.Data.dll

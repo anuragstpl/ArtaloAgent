@@ -1,0 +1,259 @@
+<UserControl x:Class="ArtaloBot.App.Views.ChatView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:converters="clr-namespace:ArtaloBot.App.Converters"
+             mc:Ignorable="d"
+             d:DesignHeight="650" d:DesignWidth="800"
+             Background="{StaticResource BackgroundBrush}">
+
+    <UserControl.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVis" />
+        <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis" />
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header Bar -->
+        <Border Grid.Row="0"
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="20,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Title -->
+                <TextBlock Grid.Column="0"
+                           Text="Chat"
+                           FontSize="20"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimaryBrush}"
+                           VerticalAlignment="Center" />
+
+                <!-- Provider Selector -->
+                <ComboBox Grid.Column="1"
+                          ItemsSource="{Binding AvailableProviders}"
+                          SelectedItem="{Binding SelectedProvider}"
+                          MinWidth="120"
+                          Height="36"
+                          Margin="0,0,12,0"
+                          Padding="12,0"
+                          FontSize="13"
+                          VerticalContentAlignment="Center" />
+
+                <!-- Model Selector -->
+                <ComboBox Grid.Column="2"
+                          ItemsSource="{Binding AvailableModels}"
+                          SelectedItem="{Binding SelectedModel}"
+                          MinWidth="160"
+                          Height="36"
+                          Margin="0,0,12,0"
+                          Padding="12,0"
+                          FontSize="13"
+                          VerticalContentAlignment="Center" />
+
+                <!-- Clear Button -->
+                <Button Grid.Column="3"
+                        Style="{StaticResource Win11IconButton}"
+                        ToolTip="Clear Chat"
+                        Command="{Binding ClearChatCommand}">
+                    <materialDesign:PackIcon Kind="Broom" Width="20" Height="20"
+                                             Foreground="{StaticResource TextSecondaryBrush}" />
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Messages Area -->
+        <ScrollViewer Grid.Row="1"
+                      x:Name="MessagesScrollViewer"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Padding="20,16">
+            <ItemsControl ItemsSource="{Binding Messages}"
+                          x:Name="MessagesItemsControl">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="0,6">
+                            <!-- User Message -->
+                            <Border Style="{StaticResource UserMessageBubble}"
+                                    Visibility="{Binding IsUser, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="{Binding Content}"
+                                           Style="{StaticResource MessageText}"
+                                           Foreground="White" />
+                            </Border>
+
+                            <!-- Assistant Message -->
+                            <Border Style="{StaticResource AssistantMessageBubble}"
+                                    Visibility="{Binding IsAssistant, Converter={StaticResource BoolToVis}}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <!-- AI Label -->
+                                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+                                        <Border Background="{StaticResource AccentBrush}"
+                                                CornerRadius="4"
+                                                Padding="6,2">
+                                            <TextBlock Text="AI" FontSize="11" FontWeight="SemiBold" Foreground="White" />
+                                        </Border>
+                                        <TextBlock Text="{Binding Model}"
+                                                   FontSize="11"
+                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                   Margin="8,0,0,0"
+                                                   VerticalAlignment="Center" />
+                                    </StackPanel>
+
+                                    <!-- Message Content -->
+                                    <TextBlock Grid.Row="1"
+                                               Text="{Binding Content}"
+                                               Style="{StaticResource MessageText}"
+                                               Foreground="{StaticResource TextPrimaryBrush}" />
+
+                                    <!-- Streaming Indicator -->
+                                    <StackPanel Grid.Row="2"
+                                                Orientation="Horizontal"
+                                                Margin="0,8,0,0"
+                                                Visibility="{Binding IsStreaming, Converter={StaticResource BoolToVis}}">
+                                        <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                                     IsIndeterminate="True"
+                                                     Width="14" Height="14"
+                                                     Foreground="{StaticResource AccentBrush}"
+                                                     Margin="0,0,8,0" />
+                                        <TextBlock Text="Generating..."
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource TextSecondaryBrush}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <!-- Empty State -->
+        <StackPanel Grid.Row="1"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Visibility="{Binding HasMessages, Converter={StaticResource InverseBoolToVis}}">
+
+            <Border Width="80" Height="80"
+                    Background="{StaticResource AccentLightBrush}"
+                    CornerRadius="20"
+                    Margin="0,0,0,20">
+                <materialDesign:PackIcon Kind="Robot"
+                                         Width="40" Height="40"
+                                         Foreground="{StaticResource AccentBrush}"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center" />
+            </Border>
+
+            <TextBlock Text="How can I help you today?"
+                       FontSize="24"
+                       FontWeight="SemiBold"
+                       Foreground="{StaticResource TextPrimaryBrush}"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,8" />
+
+            <TextBlock Text="Type a message to start chatting"
+                       FontSize="14"
+                       Foreground="{StaticResource TextSecondaryBrush}"
+                       HorizontalAlignment="Center" />
+        </StackPanel>
+
+        <!-- Input Area -->
+        <Border Grid.Row="2"
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="20,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Input Box -->
+                <TextBox Grid.Column="0"
+                         x:Name="InputTextBox"
+                         Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource Win11TextBox}"
+                         Height="44"
+                         VerticalContentAlignment="Center"
+                         Margin="0,0,12,0">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Return" Command="{Binding SendMessageCommand}" />
+                    </TextBox.InputBindings>
+                </TextBox>
+
+                <!-- Send Button -->
+                <Button Grid.Column="1"
+                        Style="{StaticResource Win11PrimaryButton}"
+                        Command="{Binding SendMessageCommand}"
+                        IsEnabled="{Binding IsStreaming, Converter={StaticResource InverseBoolToVis}}"
+                        Width="100"
+                        Height="44"
+                        ToolTip="Send (Enter)">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Send" VerticalAlignment="Center" Margin="0,0,6,0" />
+                        <materialDesign:PackIcon Kind="Send" Width="18" Height="18" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Status Bar (when streaming) -->
+        <Border Grid.Row="2"
+                VerticalAlignment="Top"
+                Margin="20,-40,20,0"
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="6"
+                Padding="12,8"
+                Visibility="{Binding IsStreaming, Converter={StaticResource BoolToVis}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                 IsIndeterminate="True"
+                                 Width="16" Height="16"
+                                 Foreground="{StaticResource AccentBrush}"
+                                 Margin="0,0,10,0" />
+                    <TextBlock Text="{Binding StatusMessage}"
+                               FontSize="13"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+
+                <Button Grid.Column="1"
+                        Style="{StaticResource Win11SecondaryButton}"
+                        Command="{Binding StopGenerationCommand}"
+                        Padding="12,6"
+                        Height="32">
+                    <TextBlock Text="Stop" FontSize="12" />
+                </Button>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
