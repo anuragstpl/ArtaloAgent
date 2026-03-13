@@ -6,139 +6,280 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:ArtaloBot.App.Converters"
              mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="800">
+             d:DesignHeight="700" d:DesignWidth="900">
 
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVis" />
         <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis" />
     </UserControl.Resources>
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto"
-                  HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Margin="24">
-            <!-- Header -->
-            <TextBlock Text="Communication Channels"
-                       Style="{StaticResource MaterialDesignHeadline4TextBlock}"
-                       Margin="0,0,0,8" />
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
 
-            <TextBlock Text="Connect ArtaloBot to external messaging platforms"
-                       Style="{StaticResource MaterialDesignBody1TextBlock}"
-                       Opacity="0.7"
-                       Margin="0,0,0,24" />
+        <!-- Main Content -->
+        <ScrollViewer Grid.Column="0"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="24">
+                <!-- Header -->
+                <TextBlock Text="Communication Channels"
+                           Style="{StaticResource MaterialDesignHeadline4TextBlock}"
+                           Margin="0,0,0,8" />
 
-            <!-- Channels List -->
-            <ItemsControl ItemsSource="{Binding Channels}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <materialDesign:Card Style="{StaticResource SettingsCard}"
-                                             Margin="0,0,0,16"
-                                             IsEnabled="{Binding IsComingSoon, Converter={StaticResource InverseBoolToVis}}">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
+                <TextBlock Text="Connect ArtaloBot to messaging platforms to chat anywhere"
+                           Style="{StaticResource MaterialDesignBody1TextBlock}"
+                           Opacity="0.7"
+                           Margin="0,0,0,24" />
 
-                                <!-- Header -->
-                                <Grid Grid.Row="0" Margin="0,0,0,16">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
+                <!-- Channels List -->
+                <ItemsControl ItemsSource="{Binding Channels}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <materialDesign:Card Margin="0,0,0,16"
+                                                 Padding="20"
+                                                 Background="{DynamicResource MaterialDesignCardBackground}">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
 
-                                    <materialDesign:PackIcon Grid.Column="0"
-                                                             Kind="{Binding Icon}"
-                                                             Width="40" Height="40"
-                                                             VerticalAlignment="Center"
-                                                             Margin="0,0,16,0"
-                                                             Foreground="{DynamicResource PrimaryHueMidBrush}" />
+                                    <!-- Header -->
+                                    <Grid Grid.Row="0" Margin="0,0,0,16">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
 
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{Binding Name}"
-                                                       Style="{StaticResource MaterialDesignHeadline6TextBlock}" />
-                                            <materialDesign:Chip Content="Coming Soon"
-                                                                 Margin="8,0,0,0"
-                                                                 Visibility="{Binding IsComingSoon, Converter={StaticResource BoolToVis}}"
-                                                                 Background="{DynamicResource SecondaryHueMidBrush}" />
+                                        <materialDesign:PackIcon Grid.Column="0"
+                                                                 Kind="{Binding Icon}"
+                                                                 Width="48" Height="48"
+                                                                 VerticalAlignment="Center"
+                                                                 Margin="0,0,16,0"
+                                                                 Foreground="{DynamicResource PrimaryHueMidBrush}" />
+
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Name}"
+                                                           Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                                           FontWeight="Medium" />
+                                                <materialDesign:Chip Content="Coming Soon"
+                                                                     Margin="12,0,0,0"
+                                                                     Visibility="{Binding IsComingSoon, Converter={StaticResource BoolToVis}}"
+                                                                     Background="{DynamicResource SecondaryHueMidBrush}"
+                                                                     Foreground="White" />
+                                                <materialDesign:Chip Content="Connected"
+                                                                     Margin="12,0,0,0"
+                                                                     Visibility="{Binding IsConnected, Converter={StaticResource BoolToVis}}"
+                                                                     Background="#4CAF50"
+                                                                     Foreground="White" />
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding Description}"
+                                                       Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                       Opacity="0.7"
+                                                       Margin="0,4,0,0" />
                                         </StackPanel>
-                                        <TextBlock Text="{Binding Description}"
-                                                   Style="{StaticResource MaterialDesignCaptionTextBlock}"
-                                                   Opacity="0.7" />
-                                    </StackPanel>
 
-                                    <!-- Connection Status -->
-                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <materialDesign:PackIcon Kind="CheckCircle"
-                                                                 Width="24" Height="24"
-                                                                 Foreground="Green"
-                                                                 Visibility="{Binding IsConnected, Converter={StaticResource BoolToVis}}"
-                                                                 Margin="0,0,8,0" />
-                                        <ToggleButton IsChecked="{Binding IsEnabled}"
-                                                      Style="{StaticResource MaterialDesignSwitchToggleButton}"
-                                                      IsEnabled="{Binding IsComingSoon, Converter={StaticResource InverseBoolToVis}}" />
-                                    </StackPanel>
-                                </Grid>
-
-                                <!-- Configuration Fields -->
-                                <ItemsControl Grid.Row="1"
-                                              ItemsSource="{Binding ConfigurationFields}"
-                                              Visibility="{Binding IsEnabled, Converter={StaticResource BoolToVis}}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
-                                                     materialDesign:HintAssist.Hint="{Binding Label}"
-                                                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                                     Margin="0,0,0,12" />
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-
-                                <!-- Action Buttons -->
-                                <StackPanel Grid.Row="2"
-                                            Orientation="Horizontal"
-                                            HorizontalAlignment="Right"
-                                            Visibility="{Binding IsEnabled, Converter={StaticResource BoolToVis}}">
-                                    <Button Content="Save"
-                                            Style="{StaticResource MaterialDesignOutlinedButton}"
-                                            Command="{Binding DataContext.SaveChannelConfigCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}"
-                                            Margin="0,0,8,0" />
-
-                                    <Button Style="{StaticResource MaterialDesignRaisedButton}"
-                                            Command="{Binding DataContext.ConnectChannelCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}"
-                                            Visibility="{Binding IsConnected, Converter={StaticResource InverseBoolToVis}}"
-                                            IsEnabled="{Binding IsConnecting, Converter={StaticResource InverseBoolToVis}}">
-                                        <StackPanel Orientation="Horizontal">
+                                        <!-- Connection Status Icon -->
+                                        <StackPanel Grid.Column="2"
+                                                    Orientation="Horizontal"
+                                                    VerticalAlignment="Center">
                                             <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
                                                          IsIndeterminate="True"
-                                                         Width="16" Height="16"
-                                                         Margin="0,0,8,0"
+                                                         Width="24" Height="24"
                                                          Visibility="{Binding IsConnecting, Converter={StaticResource BoolToVis}}" />
-                                            <TextBlock Text="Connect" />
+                                            <materialDesign:PackIcon Kind="CheckCircle"
+                                                                     Width="28" Height="28"
+                                                                     Foreground="#4CAF50"
+                                                                     Visibility="{Binding IsConnected, Converter={StaticResource BoolToVis}}" />
                                         </StackPanel>
-                                    </Button>
+                                    </Grid>
 
-                                    <Button Content="Disconnect"
-                                            Style="{StaticResource MaterialDesignOutlinedSecondaryButton}"
-                                            Command="{Binding DataContext.DisconnectChannelCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}"
-                                            Visibility="{Binding IsConnected, Converter={StaticResource BoolToVis}}" />
-                                </StackPanel>
-                            </Grid>
-                        </materialDesign:Card>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                                    <!-- Configuration Fields (for non-QR channels) -->
+                                    <ItemsControl Grid.Row="1"
+                                                  ItemsSource="{Binding ConfigurationFields}"
+                                                  Visibility="{Binding IsComingSoon, Converter={StaticResource InverseBoolToVis}}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                                         materialDesign:HintAssist.Hint="{Binding Label}"
+                                                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                                         Margin="0,0,0,12" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
 
-            <!-- Status Message -->
-            <TextBlock Text="{Binding StatusMessage}"
-                       Style="{StaticResource MaterialDesignBody2TextBlock}"
-                       Margin="0,16,0,0"
-                       Foreground="{DynamicResource SecondaryHueMidBrush}" />
-        </StackPanel>
-    </ScrollViewer>
+                                    <!-- Action Buttons -->
+                                    <StackPanel Grid.Row="2"
+                                                Orientation="Horizontal"
+                                                HorizontalAlignment="Left"
+                                                Visibility="{Binding IsComingSoon, Converter={StaticResource InverseBoolToVis}}">
+
+                                        <!-- Connect Button -->
+                                        <Button Style="{StaticResource MaterialDesignRaisedButton}"
+                                                Command="{Binding DataContext.ConnectChannelCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Visibility="{Binding IsConnected, Converter={StaticResource InverseBoolToVis}}"
+                                                IsEnabled="{Binding IsConnecting, Converter={StaticResource InverseBoolToVis}}"
+                                                Margin="0,0,12,0"
+                                                Padding="16,8">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="QrcodeScan"
+                                                                         Width="20" Height="20"
+                                                                         Margin="0,0,8,0"
+                                                                         Visibility="{Binding UsesQrCode, Converter={StaticResource BoolToVis}}" />
+                                                <materialDesign:PackIcon Kind="Power"
+                                                                         Width="20" Height="20"
+                                                                         Margin="0,0,8,0"
+                                                                         Visibility="{Binding UsesQrCode, Converter={StaticResource InverseBoolToVis}}" />
+                                                <TextBlock Text="Connect" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+
+                                        <!-- Disconnect Button -->
+                                        <Button Content="Disconnect"
+                                                Style="{StaticResource MaterialDesignOutlinedButton}"
+                                                Command="{Binding DataContext.DisconnectChannelCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Visibility="{Binding IsConnected, Converter={StaticResource BoolToVis}}"
+                                                Padding="16,8" />
+                                    </StackPanel>
+                                </Grid>
+                            </materialDesign:Card>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Status Message -->
+                <TextBlock Text="{Binding StatusMessage}"
+                           Style="{StaticResource MaterialDesignBody2TextBlock}"
+                           Margin="0,8,0,0"
+                           Foreground="{DynamicResource SecondaryHueMidBrush}" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- QR Code Panel (Right Side) -->
+        <Border Grid.Column="1"
+                Width="350"
+                Background="{DynamicResource MaterialDesignCardBackground}"
+                BorderBrush="{DynamicResource MaterialDesignDivider}"
+                BorderThickness="1,0,0,0"
+                Visibility="{Binding ShowQrCode, Converter={StaticResource BoolToVis}}">
+            <StackPanel Margin="24" VerticalAlignment="Center">
+                <!-- WhatsApp Header -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,24">
+                    <materialDesign:PackIcon Kind="Whatsapp"
+                                             Width="32" Height="32"
+                                             Foreground="#25D366"
+                                             VerticalAlignment="Center"
+                                             Margin="0,0,12,0" />
+                    <TextBlock Text="WhatsApp"
+                               Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- QR Code Image -->
+                <Border Background="White"
+                        CornerRadius="8"
+                        Padding="16"
+                        HorizontalAlignment="Center"
+                        Margin="0,0,0,24">
+                    <Image Source="{Binding QrCodeImage}"
+                           Width="250" Height="250"
+                           RenderOptions.BitmapScalingMode="NearestNeighbor" />
+                </Border>
+
+                <!-- Instructions -->
+                <TextBlock Text="Scan with WhatsApp"
+                           Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,12" />
+
+                <TextBlock TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           Style="{StaticResource MaterialDesignBody2TextBlock}"
+                           Opacity="0.7"
+                           Margin="0,0,0,24">
+                    <Run Text="1. Open WhatsApp on your phone" />
+                    <LineBreak />
+                    <Run Text="2. Tap Menu or Settings" />
+                    <LineBreak />
+                    <Run Text="3. Select 'Linked Devices'" />
+                    <LineBreak />
+                    <Run Text="4. Tap 'Link a Device'" />
+                    <LineBreak />
+                    <Run Text="5. Point your phone at this QR code" />
+                </TextBlock>
+
+                <!-- Status -->
+                <Border Background="{DynamicResource PrimaryHueLightBrush}"
+                        CornerRadius="4"
+                        Padding="12,8"
+                        HorizontalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                     IsIndeterminate="True"
+                                     Width="16" Height="16"
+                                     Margin="0,0,8,0" />
+                        <TextBlock Text="{Binding WhatsAppStatus}"
+                                   Style="{StaticResource MaterialDesignBody2TextBlock}" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Refresh Button -->
+                <Button Content="Refresh QR Code"
+                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                        Command="{Binding RefreshQrCodeCommand}"
+                        HorizontalAlignment="Center"
+                        Margin="0,16,0,0" />
+            </StackPanel>
+        </Border>
+
+        <!-- Connected Panel (shows instead of QR when connected) -->
+        <Border Grid.Column="1"
+                Width="350"
+                Background="{DynamicResource MaterialDesignCardBackground}"
+                BorderBrush="{DynamicResource MaterialDesignDivider}"
+                BorderThickness="1,0,0,0"
+                Visibility="{Binding ConnectedNumber, Converter={StaticResource NullToVisibilityConverter}}">
+            <StackPanel Margin="24" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <materialDesign:PackIcon Kind="CheckCircle"
+                                         Width="64" Height="64"
+                                         Foreground="#4CAF50"
+                                         HorizontalAlignment="Center"
+                                         Margin="0,0,0,16" />
+
+                <TextBlock Text="WhatsApp Connected"
+                           Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,8" />
+
+                <TextBlock Text="{Binding ConnectedNumber, StringFormat='Phone: {0}'}"
+                           Style="{StaticResource MaterialDesignBody1TextBlock}"
+                           HorizontalAlignment="Center"
+                           Opacity="0.7"
+                           Margin="0,0,0,24" />
+
+                <TextBlock TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           Style="{StaticResource MaterialDesignBody2TextBlock}"
+                           Opacity="0.7"
+                           Margin="0,0,0,24">
+                    Messages sent to this number will be
+                    processed by ArtaloBot using your local Ollama.
+                </TextBlock>
+
+                <Button Content="Disconnect"
+                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                        Command="{Binding DisconnectChannelCommand}"
+                        CommandParameter="{Binding Channels[0]}"
+                        HorizontalAlignment="Center" />
+            </StackPanel>
+        </Border>
+    </Grid>
 </UserControl>

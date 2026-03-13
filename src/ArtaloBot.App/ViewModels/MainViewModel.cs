@@ -33,6 +33,7 @@ public partial class MainViewModel : ObservableObject
     public SessionsViewModel SessionsViewModel { get; }
     public DebugViewModel DebugViewModel { get; }
     public MCPViewModel MCPViewModel { get; }
+    public ChannelsViewModel ChannelsViewModel { get; }
 
     public MainViewModel(
         INavigationService navigationService,
@@ -42,7 +43,8 @@ public partial class MainViewModel : ObservableObject
         SettingsViewModel settingsViewModel,
         SessionsViewModel sessionsViewModel,
         DebugViewModel debugViewModel,
-        MCPViewModel mcpViewModel)
+        MCPViewModel mcpViewModel,
+        ChannelsViewModel channelsViewModel)
     {
         _navigationService = navigationService;
         _themeService = themeService;
@@ -53,6 +55,7 @@ public partial class MainViewModel : ObservableObject
         SessionsViewModel = sessionsViewModel;
         DebugViewModel = debugViewModel;
         MCPViewModel = mcpViewModel;
+        ChannelsViewModel = channelsViewModel;
 
         _currentView = chatViewModel;
         _isDarkTheme = _themeService.IsDarkTheme;
@@ -70,6 +73,8 @@ public partial class MainViewModel : ObservableObject
             CurrentView = SettingsViewModel;
         else if (viewModelType == typeof(MCPViewModel))
             CurrentView = MCPViewModel;
+        else if (viewModelType == typeof(ChannelsViewModel))
+            CurrentView = ChannelsViewModel;
     }
 
     [RelayCommand]
@@ -104,6 +109,13 @@ public partial class MainViewModel : ObservableObject
     {
         CurrentView = MCPViewModel;
         SelectedNavIndex = 2;
+    }
+
+    [RelayCommand]
+    private void NavigateToChannels()
+    {
+        CurrentView = ChannelsViewModel;
+        SelectedNavIndex = 3;
     }
 
     [RelayCommand]

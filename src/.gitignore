@@ -1,0 +1,150 @@
+# Build outputs
+bin/
+obj/
+out/
+
+# Assembly files
+*.dll
+*.exe
+*.pdb
+*.cache
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.lib
+*.exp
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# Visual Studio Code
+.vscode/
+
+# Rider
+.idea/
+
+# NuGet
+*.nupkg
+**/packages/*
+!**/packages/build/
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# User-specific files
+*.user
+*.rsuser
+*.suo
+*.userprefs
+
+# Publish output
+publish/
+PublishOutput/
+
+# SQLite databases (development)
+*.db
+*.db-shm
+*.db-wal
+
+# Application data (local dev)
+AppData/
+
+# Secrets and API keys
+*.env
+.env.*
+secrets.json
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json.template
+
+# Logs
+*.log
+logs/
+
+# Crash dumps
+*.dmp
+*.stackdump
+
+# Code coverage
+*.coverage
+*.coveragexml
+coverage/
+
+# JetBrains Rider
+*.sln.iml
+
+# Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# NCrunch
+*.ncrunch*
+_NCrunch_*
+.*crunch*.local.xml
+
+# Installshield
+[Ee]xpress/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Click-Once
+*.application
+*.manifest
+
+# Backup files
+*~
+*.bak
+*.swp
+
+# Temporary files
+*.tmp
+*.temp

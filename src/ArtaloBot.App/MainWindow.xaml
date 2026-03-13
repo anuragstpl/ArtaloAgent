@@ -24,6 +24,9 @@
         <DataTemplate DataType="{x:Type viewModels:MCPViewModel}">
             <views:MCPView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:ChannelsViewModel}">
+            <views:ChannelsView />
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>
@@ -110,6 +113,17 @@
                                                      Foreground="{StaticResource TextSecondaryBrush}"
                                                      Margin="0,0,12,0" VerticalAlignment="Center" />
                             <TextBlock Text="Skills" FontSize="14" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Style="{StaticResource Win11NavButton}"
+                            Command="{Binding NavigateToChannelsCommand}"
+                            Margin="0,2">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Forum" Width="20" Height="20"
+                                                     Foreground="{StaticResource TextSecondaryBrush}"
+                                                     Margin="0,0,12,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Channels" FontSize="14" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
 

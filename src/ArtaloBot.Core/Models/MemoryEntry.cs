@@ -51,10 +51,10 @@ public class MemorySettings
     public string EmbeddingModel { get; set; } = "nomic-embed-text:latest";
 
     /// <summary>Cosine similarity threshold (0–1). Memories below this score are excluded.</summary>
-    public double SimilarityThreshold { get; set; } = 0.60;
+    public double SimilarityThreshold { get; set; } = 0.40; // Lowered for better semantic matching
 
     /// <summary>Maximum number of relevant memories to inject into each prompt.</summary>
-    public int MaxMemoriesToInject { get; set; } = 5;
+    public int MaxMemoriesToInject { get; set; } = 10;
 
     /// <summary>Maximum total number of memories stored globally before the oldest are pruned.</summary>
     public int MaxMemories { get; set; } = 1000;

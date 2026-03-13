@@ -6,6 +6,7 @@ public enum ChannelType
     Telegram,
     Discord,
     Slack,
+    Teams,
     Direct
 }
 

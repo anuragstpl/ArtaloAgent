@@ -99,15 +99,30 @@ public partial class App : Application
         services.AddSingleton<WeatherSkill>();
 
         // Channels
-        services.AddSingleton<IChannelManager, ChannelManager>();
-        services.AddSingleton<WhatsAppChannel>();
+        services.AddSingleton<IChannelManager>(sp =>
+        {
+            var debugService = sp.GetRequiredService<IDebugService>();
+            return new ChannelManager(debugService);
+        });
+        services.AddSingleton<WhatsAppChannel>(sp =>
+        {
+            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+            var debugService = sp.GetRequiredService<IDebugService>();
+            return new WhatsAppChannel(httpClientFactory, debugService);
+        });
 
         // ViewModels
         services.AddTransient<MainViewModel>();
         services.AddTransient<ChatViewModel>();
         services.AddTransient<SettingsViewModel>();
         services.AddTransient<SessionsViewModel>();
-        services.AddTransient<ChannelsViewModel>();
+        services.AddSingleton<ChannelsViewModel>(sp =>
+        {
+            var settingsService = sp.CreateScope().ServiceProvider.GetRequiredService<ISettingsService>();
+            var channelManager = sp.GetRequiredService<IChannelManager>();
+            var debugService = sp.GetRequiredService<IDebugService>();
+            return new ChannelsViewModel(settingsService, channelManager, debugService);
+        });
         services.AddSingleton<MCPViewModel>();
 
         // Services
@@ -145,11 +160,20 @@ public partial class App : Application
         var channelManager = _host.Services.GetRequiredService<IChannelManager>() as ChannelManager;
         channelManager?.RegisterProvider(_host.Services.GetRequiredService<WhatsAppChannel>());
 
+        // Set up AI handler for channel messages
+        if (channelManager != null)
+        {
+            channelManager.SetAIResponseHandler(ProcessChannelMessageAsync);
+        }
+
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         mainWindow.Show();
 
         // Auto-connect MCP skills on startup (fire and forget)
         _ = AutoConnectMCPSkillsAsync();
+
+        // Warm up memory/embedding service
+        _ = WarmupMemoryServiceAsync();
 
         base.OnStartup(e);
     }
@@ -181,6 +205,111 @@ public partial class App : Application
         catch (Exception ex)
         {
             debugService.Error("App", "Failed to auto-connect MCP skills", ex.Message);
+        }
+    }
+
+    private async Task WarmupMemoryServiceAsync()
+    {
+        var debugService = _host.Services.GetRequiredService<IDebugService>();
+
+        try
+        {
+            await Task.Delay(1000); // Let other services start first
+
+            var memoryService = _host.Services.GetRequiredService<IMemoryService>();
+            var settingsService = _host.Services.CreateScope().ServiceProvider.GetRequiredService<ISettingsService>();
+            var memSettings = await settingsService.GetMemorySettingsAsync();
+
+            debugService.Info("Memory", "Warming up embedding service...",
+                $"Provider: {memSettings.EmbeddingProvider}, Model: {memSettings.EmbeddingModel}");
+
+            // Test embedding to ensure Ollama model is loaded
+            var testEmbedding = await memoryService.GetEmbeddingAsync("test warmup query");
+
+            if (testEmbedding.Length > 0)
+            {
+                debugService.Success("Memory", $"Embedding service ready ({testEmbedding.Length} dimensions)");
+
+                // Check memory count
+                var memoryCount = await memoryService.GetMemoryCountAsync();
+                debugService.Info("Memory", $"Total memories in database: {memoryCount}");
+            }
+            else
+            {
+                debugService.Warning("Memory", "Embedding service returned empty result");
+            }
+        }
+        catch (Exception ex)
+        {
+            debugService.Error("Memory", "Failed to warmup memory service", ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Process incoming channel messages with the AI and return a response.
+    /// </summary>
+    private async Task<string> ProcessChannelMessageAsync(Core.Models.ChannelMessage message)
+    {
+        var debugService = _host.Services.GetRequiredService<IDebugService>();
+
+        try
+        {
+            debugService.Info("Channel", $"Processing message from {message.SenderName}",
+                $"Channel: {message.ChannelType}, Content: {message.Content}");
+
+            // Get LLM service
+            var llmFactory = _host.Services.GetRequiredService<ILLMServiceFactory>();
+            var service = llmFactory.GetService(Core.Models.LLMProviderType.Ollama);
+
+            if (service == null)
+            {
+                llmFactory.CreateService(Core.Models.LLMProviderType.Ollama, "", "http://localhost:11434");
+                service = llmFactory.GetService(Core.Models.LLMProviderType.Ollama);
+            }
+
+            if (service == null)
+            {
+                return "Sorry, I'm having trouble connecting to my brain. Please try again later.";
+            }
+
+            // Get settings
+            using var scope = _host.Services.CreateScope();
+            var settingsService = scope.ServiceProvider.GetRequiredService<ISettingsService>();
+            var settings = await settingsService.GetDefaultLLMSettingsAsync();
+
+            // Use a suitable model
+            var models = await service.GetAvailableModelsAsync();
+            settings.Model = models.FirstOrDefault() ?? "qwen2.5:3b";
+
+            // Build system prompt for channel context
+            settings.SystemPrompt = $@"You are ArtaloBot, a helpful AI assistant responding via {message.ChannelType}.
+You are chatting with {message.SenderName}.
+Keep your responses concise and friendly - this is a messaging app.
+Don't use markdown formatting as it won't render in chat apps.
+Be helpful and conversational.";
+
+            // Create message list
+            var messages = new List<Core.Models.ChatMessage>
+            {
+                new()
+                {
+                    Role = Core.Models.MessageRole.User,
+                    Content = message.Content
+                }
+            };
+
+            // Get response (non-streaming for simplicity)
+            var response = await service.SendMessageAsync(messages, settings);
+
+            debugService.Success("Channel", "AI response generated",
+                response.Length > 100 ? response[..100] + "..." : response);
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            debugService.Error("Channel", "Failed to process message", ex.Message);
+            return "Sorry, I encountered an error processing your message. Please try again.";
         }
     }
 

@@ -198,18 +198,21 @@
                          VerticalContentAlignment="Center"
                          Margin="0,0,12,0">
                     <TextBox.InputBindings>
+                        <!-- Enter: Queue message with debounce (allows multiple messages) -->
                         <KeyBinding Key="Return" Command="{Binding SendMessageCommand}" />
+                        <!-- Shift+Enter: Send immediately -->
+                        <KeyBinding Key="Return" Modifiers="Shift" Command="{Binding SendMessageImmediateCommand}" />
                     </TextBox.InputBindings>
                 </TextBox>
 
-                <!-- Send Button -->
+                <!-- Send Button (sends immediately) -->
                 <Button Grid.Column="1"
                         Style="{StaticResource Win11PrimaryButton}"
-                        Command="{Binding SendMessageCommand}"
+                        Command="{Binding SendMessageImmediateCommand}"
                         IsEnabled="{Binding IsStreaming, Converter={StaticResource InverseBoolToVis}}"
                         Width="100"
                         Height="44"
-                        ToolTip="Send (Enter)">
+                        ToolTip="Send immediately (Shift+Enter)">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Send" VerticalAlignment="Center" Margin="0,0,6,0" />
                         <materialDesign:PackIcon Kind="Send" Width="18" Height="18" VerticalAlignment="Center" />

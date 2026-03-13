@@ -325,6 +325,18 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+            "DocumentFormat.OpenXml": {
+              "target": "Package",
+              "version": "[3.0.2, )"
+            },
+            "ExcelDataReader": {
+              "target": "Package",
+              "version": "[3.7.0, )"
+            },
+            "ExcelDataReader.DataSet": {
+              "target": "Package",
+              "version": "[3.7.0, )"
+            },
             "Microsoft.EntityFrameworkCore": {
               "target": "Package",
               "version": "[8.0.*, )"
@@ -345,9 +357,17 @@
               "target": "Package",
               "version": "[3.0.0, )"
             },
+            "System.Text.Encoding.CodePages": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+            },
             "Twilio": {
               "target": "Package",
               "version": "[7.14.3, )"
+            },
+            "UglyToad.PdfPig": {
+              "target": "Package",
+              "version": "[0.1.9, )"
             }
           },
           "imports": [

@@ -18,6 +18,67 @@
           "buildTransitive/CommunityToolkit.Mvvm.targets": {}
         }
       },
+      "DocumentFormat.OpenXml/3.0.2": {
+        "type": "package",
+        "dependencies": {
+          "DocumentFormat.OpenXml.Framework": "3.0.2"
+        },
+        "compile": {
+          "lib/net8.0/DocumentFormat.OpenXml.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/DocumentFormat.OpenXml.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "DocumentFormat.OpenXml.Framework/3.0.2": {
+        "type": "package",
+        "dependencies": {
+          "System.IO.Packaging": "8.0.0"
+        },
+        "compile": {
+          "lib/net8.0/DocumentFormat.OpenXml.Framework.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/DocumentFormat.OpenXml.Framework.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "ExcelDataReader/3.7.0": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.1/ExcelDataReader.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.1/ExcelDataReader.dll": {
+            "related": ".pdb;.xml"
+          }
+        }
+      },
+      "ExcelDataReader.DataSet/3.7.0": {
+        "type": "package",
+        "dependencies": {
+          "ExcelDataReader": "3.7.0"
+        },
+        "compile": {
+          "lib/netstandard2.1/ExcelDataReader.DataSet.dll": {
+            "related": ".pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.1/ExcelDataReader.DataSet.dll": {
+            "related": ".pdb;.xml"
+          }
+        }
+      },
       "Microsoft.Bcl.Memory/9.0.0": {
         "type": "package",
         "compile": {
@@ -931,6 +992,22 @@
           }
         }
       },
+      "System.IO.Packaging/8.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/System.IO.Packaging.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/System.IO.Packaging.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/net6.0/_._": {}
+        }
+      },
       "System.IO.Pipelines/10.0.1": {
         "type": "package",
         "compile": {
@@ -1115,6 +1192,28 @@
           }
         }
       },
+      "System.Text.Encoding.CodePages/8.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/System.Text.Encoding.CodePages.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/System.Text.Encoding.CodePages.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/net6.0/_._": {}
+        },
+        "runtimeTargets": {
+          "runtimes/win/lib/net8.0/System.Text.Encoding.CodePages.dll": {
+            "assetType": "runtime",
+            "rid": "win"
+          }
+        }
+      },
       "System.Text.Encodings.Web/10.0.1": {
         "type": "package",
         "compile": {
@@ -1276,6 +1375,98 @@
         "lib/netstandard2.1/CommunityToolkit.Mvvm.dll",
         "lib/netstandard2.1/CommunityToolkit.Mvvm.pdb",
         "lib/netstandard2.1/CommunityToolkit.Mvvm.xml"
+      ]
+    },
+    "DocumentFormat.OpenXml/3.0.2": {
+      "sha512": "gqjP/BxKWgwAWwPAN+RpKaMOiidPM07F+mAxiiW184/MnkHnkk12Qo7cRB0wuq4kOZUrUzQ9EUO966hUy/wKBw==",
+      "type": "package",
+      "path": "documentformat.openxml/3.0.2",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "documentformat.openxml.3.0.2.nupkg.sha512",
+        "documentformat.openxml.nuspec",
+        "icon.png",
+        "lib/net35/DocumentFormat.OpenXml.dll",
+        "lib/net35/DocumentFormat.OpenXml.xml",
+        "lib/net40/DocumentFormat.OpenXml.dll",
+        "lib/net40/DocumentFormat.OpenXml.xml",
+        "lib/net46/DocumentFormat.OpenXml.dll",
+        "lib/net46/DocumentFormat.OpenXml.xml",
+        "lib/net8.0/DocumentFormat.OpenXml.dll",
+        "lib/net8.0/DocumentFormat.OpenXml.xml",
+        "lib/netstandard2.0/DocumentFormat.OpenXml.dll",
+        "lib/netstandard2.0/DocumentFormat.OpenXml.xml"
+      ]
+    },
+    "DocumentFormat.OpenXml.Framework/3.0.2": {
+      "sha512": "ILRCJu2dUJDv27ZCQDftD7AZSuBgKg+ZSUF9dg2dk8qcIED7oM42y/cvZIm0mev80nj2QMzpxthX87+AebzHug==",
+      "type": "package",
+      "path": "documentformat.openxml.framework/3.0.2",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "documentformat.openxml.framework.3.0.2.nupkg.sha512",
+        "documentformat.openxml.framework.nuspec",
+        "icon.png",
+        "lib/net35/DocumentFormat.OpenXml.Framework.dll",
+        "lib/net35/DocumentFormat.OpenXml.Framework.xml",
+        "lib/net40/DocumentFormat.OpenXml.Framework.dll",
+        "lib/net40/DocumentFormat.OpenXml.Framework.xml",
+        "lib/net46/DocumentFormat.OpenXml.Framework.dll",
+        "lib/net46/DocumentFormat.OpenXml.Framework.xml",
+        "lib/net6.0/DocumentFormat.OpenXml.Framework.dll",
+        "lib/net6.0/DocumentFormat.OpenXml.Framework.xml",
+        "lib/net8.0/DocumentFormat.OpenXml.Framework.dll",
+        "lib/net8.0/DocumentFormat.OpenXml.Framework.xml",
+        "lib/netstandard2.0/DocumentFormat.OpenXml.Framework.dll",
+        "lib/netstandard2.0/DocumentFormat.OpenXml.Framework.xml"
+      ]
+    },
+    "ExcelDataReader/3.7.0": {
+      "sha512": "AMv3oDETRHSRyXC17rBtKH45qIfFyo433LMeaMB3u4RNr/c9Luuc0Z+JMP6+3Cx9n4wXqFqcrEIVxrf/GgYnZg==",
+      "type": "package",
+      "path": "exceldatareader/3.7.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "ExcelDataReader.png",
+        "README.md",
+        "exceldatareader.3.7.0.nupkg.sha512",
+        "exceldatareader.nuspec",
+        "lib/net462/ExcelDataReader.dll",
+        "lib/net462/ExcelDataReader.pdb",
+        "lib/net462/ExcelDataReader.xml",
+        "lib/netstandard2.0/ExcelDataReader.dll",
+        "lib/netstandard2.0/ExcelDataReader.pdb",
+        "lib/netstandard2.0/ExcelDataReader.xml",
+        "lib/netstandard2.1/ExcelDataReader.dll",
+        "lib/netstandard2.1/ExcelDataReader.pdb",
+        "lib/netstandard2.1/ExcelDataReader.xml"
+      ]
+    },
+    "ExcelDataReader.DataSet/3.7.0": {
+      "sha512": "zA2/CVzbMspkNg0qf0/Zp+eU6VxYP5PtiJSErLDP46d/Y7F6of/NCcSGeXjs97KDq7UiEf6XJe+89s/92n2GYg==",
+      "type": "package",
+      "path": "exceldatareader.dataset/3.7.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "ExcelDataReader.png",
+        "README.md",
+        "exceldatareader.dataset.3.7.0.nupkg.sha512",
+        "exceldatareader.dataset.nuspec",
+        "lib/net462/ExcelDataReader.DataSet.dll",
+        "lib/net462/ExcelDataReader.DataSet.pdb",
+        "lib/net462/ExcelDataReader.DataSet.xml",
+        "lib/netstandard2.0/ExcelDataReader.DataSet.dll",
+        "lib/netstandard2.0/ExcelDataReader.DataSet.pdb",
+        "lib/netstandard2.0/ExcelDataReader.DataSet.xml",
+        "lib/netstandard2.1/ExcelDataReader.DataSet.dll",
+        "lib/netstandard2.1/ExcelDataReader.DataSet.pdb",
+        "lib/netstandard2.1/ExcelDataReader.DataSet.xml"
       ]
     },
     "Microsoft.Bcl.Memory/9.0.0": {
@@ -2725,6 +2916,35 @@
         "system.io.nuspec"
       ]
     },
+    "System.IO.Packaging/8.0.0": {
+      "sha512": "8g1V4YRpdGAxFcK8v9OjuMdIOJSpF30Zb1JGicwVZhly3I994WFyBdV6mQEo8d3T+URQe55/M0U0eIH0Hts1bg==",
+      "type": "package",
+      "path": "system.io.packaging/8.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "LICENSE.TXT",
+        "THIRD-PARTY-NOTICES.TXT",
+        "buildTransitive/net461/System.IO.Packaging.targets",
+        "buildTransitive/net462/_._",
+        "buildTransitive/net6.0/_._",
+        "buildTransitive/netcoreapp2.0/System.IO.Packaging.targets",
+        "lib/net462/System.IO.Packaging.dll",
+        "lib/net462/System.IO.Packaging.xml",
+        "lib/net6.0/System.IO.Packaging.dll",
+        "lib/net6.0/System.IO.Packaging.xml",
+        "lib/net7.0/System.IO.Packaging.dll",
+        "lib/net7.0/System.IO.Packaging.xml",
+        "lib/net8.0/System.IO.Packaging.dll",
+        "lib/net8.0/System.IO.Packaging.xml",
+        "lib/netstandard2.0/System.IO.Packaging.dll",
+        "lib/netstandard2.0/System.IO.Packaging.xml",
+        "system.io.packaging.8.0.0.nupkg.sha512",
+        "system.io.packaging.nuspec",
+        "useSharedDesignerContext.txt"
+      ]
+    },
     "System.IO.Pipelines/10.0.1": {
       "sha512": "26LbFXHKd7PmRnWlkjnYgmjd5B6HYVG+1MpTO25BdxTJnx6D0O16JPAC/S4YBqjtt4YpfGj1QO/Ss6SPMGEGQw==",
       "type": "package",
@@ -3435,6 +3655,48 @@
         "system.text.encoding.nuspec"
       ]
     },
+    "System.Text.Encoding.CodePages/8.0.0": {
+      "sha512": "OZIsVplFGaVY90G2SbpgU7EnCoOO5pw1t4ic21dBF3/1omrJFpAGoNAVpPyMVOC90/hvgkGG3VFqR13YgZMQfg==",
+      "type": "package",
+      "path": "system.text.encoding.codepages/8.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "LICENSE.TXT",
+        "PACKAGE.md",
+        "THIRD-PARTY-NOTICES.TXT",
+        "buildTransitive/net461/System.Text.Encoding.CodePages.targets",
+        "buildTransitive/net462/_._",
+        "buildTransitive/net6.0/_._",
+        "buildTransitive/netcoreapp2.0/System.Text.Encoding.CodePages.targets",
+        "lib/MonoAndroid10/_._",
+        "lib/MonoTouch10/_._",
+        "lib/net462/System.Text.Encoding.CodePages.dll",
+        "lib/net462/System.Text.Encoding.CodePages.xml",
+        "lib/net6.0/System.Text.Encoding.CodePages.dll",
+        "lib/net6.0/System.Text.Encoding.CodePages.xml",
+        "lib/net7.0/System.Text.Encoding.CodePages.dll",
+        "lib/net7.0/System.Text.Encoding.CodePages.xml",
+        "lib/net8.0/System.Text.Encoding.CodePages.dll",
+        "lib/net8.0/System.Text.Encoding.CodePages.xml",
+        "lib/netstandard2.0/System.Text.Encoding.CodePages.dll",
+        "lib/netstandard2.0/System.Text.Encoding.CodePages.xml",
+        "lib/xamarinios10/_._",
+        "lib/xamarinmac20/_._",
+        "lib/xamarintvos10/_._",
+        "lib/xamarinwatchos10/_._",
+        "runtimes/win/lib/net6.0/System.Text.Encoding.CodePages.dll",
+        "runtimes/win/lib/net6.0/System.Text.Encoding.CodePages.xml",
+        "runtimes/win/lib/net7.0/System.Text.Encoding.CodePages.dll",
+        "runtimes/win/lib/net7.0/System.Text.Encoding.CodePages.xml",
+        "runtimes/win/lib/net8.0/System.Text.Encoding.CodePages.dll",
+        "runtimes/win/lib/net8.0/System.Text.Encoding.CodePages.xml",
+        "system.text.encoding.codepages.8.0.0.nupkg.sha512",
+        "system.text.encoding.codepages.nuspec",
+        "useSharedDesignerContext.txt"
+      ]
+    },
     "System.Text.Encodings.Web/10.0.1": {
       "sha512": "cVAka0o1rJJ5/De0pjNs7jcaZk5hUGf1HGzUyVmE2MEB1Vf0h/8qsWxImk1zjitCbeD2Avaq2P2+usdvqgbeVQ==",
       "type": "package",
@@ -3718,12 +3980,17 @@
     "net8.0": [
       "ArtaloBot.Core >= 1.0.0",
       "ArtaloBot.Data >= 1.0.0",
+      "DocumentFormat.OpenXml >= 3.0.2",
+      "ExcelDataReader >= 3.7.0",
+      "ExcelDataReader.DataSet >= 3.7.0",
       "Microsoft.EntityFrameworkCore >= 8.0.*",
       "Microsoft.Extensions.Http >= 10.0.4",
       "Newtonsoft.Json >= 13.0.4",
       "OpenAI >= 2.9.1",
       "Polly.Extensions.Http >= 3.0.0",
-      "Twilio >= 7.14.3"
+      "System.Text.Encoding.CodePages >= 8.0.0",
+      "Twilio >= 7.14.3",
+      "UglyToad.PdfPig >= 0.1.9"
     ]
   },
   "packageFolders": {
@@ -3784,6 +4051,18 @@
       "net8.0": {
         "targetAlias": "net8.0",
         "dependencies": {
+          "DocumentFormat.OpenXml": {
+            "target": "Package",
+            "version": "[3.0.2, )"
+          },
+          "ExcelDataReader": {
+            "target": "Package",
+            "version": "[3.7.0, )"
+          },
+          "ExcelDataReader.DataSet": {
+            "target": "Package",
+            "version": "[3.7.0, )"
+          },
           "Microsoft.EntityFrameworkCore": {
             "target": "Package",
             "version": "[8.0.*, )"
@@ -3804,9 +4083,17 @@
             "target": "Package",
             "version": "[3.0.0, )"
           },
+          "System.Text.Encoding.CodePages": {
+            "target": "Package",
+            "version": "[8.0.0, )"
+          },
           "Twilio": {
             "target": "Package",
             "version": "[7.14.3, )"
+          },
+          "UglyToad.PdfPig": {
+            "target": "Package",
+            "version": "[0.1.9, )"
           }
         },
         "imports": [
@@ -3828,5 +4115,16 @@
         "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.101/PortableRuntimeIdentifierGraph.json"
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1103",
+      "level": "Error",
+      "message": "Unable to find a stable package UglyToad.PdfPig with version (>= 0.1.9)\r\n  - Found 2 version(s) in nuget.org [ Nearest version: 1.7.0-custom-5 ]\r\n  - Found 0 version(s) in Microsoft Visual Studio Offline Packages\r\n  - Found 0 version(s) in C:\\Program Files\\dotnet\\library-packs",
+      "libraryId": "UglyToad.PdfPig",
+      "targetGraphs": [
+        "net8.0"
+      ]
+    }
+  ]
 }

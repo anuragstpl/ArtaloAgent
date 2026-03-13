@@ -10,6 +10,9 @@ public class AppDbContext : DbContext
     public DbSet<AppSetting> AppSettings { get; set; } = null!;
     public DbSet<MemoryEntry> MemoryEntries { get; set; } = null!;
     public DbSet<MCPServerConfig> MCPServers { get; set; } = null!;
+    public DbSet<Agent> Agents { get; set; } = null!;
+    public DbSet<AgentDocument> AgentDocuments { get; set; } = null!;
+    public DbSet<AgentChunk> AgentChunks { get; set; } = null!;
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -74,6 +77,56 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Url).HasMaxLength(500);
             entity.HasIndex(e => e.Name);
             entity.HasIndex(e => e.IsEnabled);
+        });
+
+        // Agent entities
+        modelBuilder.Entity<Agent>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(2000);
+            entity.Property(e => e.SystemPrompt).HasMaxLength(10000);
+            entity.Property(e => e.Icon).HasMaxLength(50);
+            entity.HasIndex(e => e.Name);
+            entity.HasIndex(e => e.IsEnabled);
+            entity.HasIndex(e => e.IsDefault);
+        });
+
+        modelBuilder.Entity<AgentDocument>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.FileName).HasMaxLength(500).IsRequired();
+            entity.Property(e => e.FilePath).HasMaxLength(1000).IsRequired();
+            entity.Property(e => e.FileType).HasMaxLength(50);
+            entity.Property(e => e.ErrorMessage).HasMaxLength(2000);
+            entity.HasIndex(e => e.AgentId);
+            entity.HasIndex(e => e.Status);
+
+            entity.HasOne(e => e.Agent)
+                .WithMany(a => a.Documents)
+                .HasForeignKey(e => e.AgentId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<AgentChunk>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Content).IsRequired();
+            entity.Property(e => e.EmbeddingJson).IsRequired();
+            entity.Property(e => e.EmbeddingModel).HasMaxLength(100);
+            entity.Property(e => e.Metadata).HasMaxLength(5000);
+            entity.HasIndex(e => e.AgentId);
+            entity.HasIndex(e => e.DocumentId);
+
+            entity.HasOne(e => e.Agent)
+                .WithMany()
+                .HasForeignKey(e => e.AgentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Document)
+                .WithMany()
+                .HasForeignKey(e => e.DocumentId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

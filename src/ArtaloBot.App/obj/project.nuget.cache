@@ -1,10 +1,14 @@
 {
   "version": 2,
-  "dgSpecHash": "1eAzm64mJ1s=",
-  "success": true,
+  "dgSpecHash": "26TkvQlPQVo=",
+  "success": false,
   "projectFilePath": "D:\\Projects\\ArtaloBot\\src\\ArtaloBot.App\\ArtaloBot.App.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\ASUS\\.nuget\\packages\\communitytoolkit.mvvm\\8.4.0\\communitytoolkit.mvvm.8.4.0.nupkg.sha512",
+    "C:\\Users\\ASUS\\.nuget\\packages\\documentformat.openxml\\3.0.2\\documentformat.openxml.3.0.2.nupkg.sha512",
+    "C:\\Users\\ASUS\\.nuget\\packages\\documentformat.openxml.framework\\3.0.2\\documentformat.openxml.framework.3.0.2.nupkg.sha512",
+    "C:\\Users\\ASUS\\.nuget\\packages\\exceldatareader\\3.7.0\\exceldatareader.3.7.0.nupkg.sha512",
+    "C:\\Users\\ASUS\\.nuget\\packages\\exceldatareader.dataset\\3.7.0\\exceldatareader.dataset.3.7.0.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\markdig\\0.22.0\\markdig.0.22.0.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\markdig.wpf\\0.5.0.1\\markdig.wpf.0.5.0.1.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\materialdesigncolors\\5.3.0\\materialdesigncolors.5.3.0.nupkg.sha512",
@@ -73,6 +77,7 @@
     "C:\\Users\\ASUS\\.nuget\\packages\\system.globalization.extensions\\4.3.0\\system.globalization.extensions.4.3.0.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\system.identitymodel.tokens.jwt\\8.3.1\\system.identitymodel.tokens.jwt.8.3.1.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\system.io\\4.3.0\\system.io.4.3.0.nupkg.sha512",
+    "C:\\Users\\ASUS\\.nuget\\packages\\system.io.packaging\\8.0.0\\system.io.packaging.8.0.0.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\system.io.pipelines\\10.0.4\\system.io.pipelines.10.0.4.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\system.memory\\4.5.3\\system.memory.4.5.3.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\system.memory.data\\10.0.1\\system.memory.data.10.0.1.nupkg.sha512",
@@ -86,11 +91,22 @@
     "C:\\Users\\ASUS\\.nuget\\packages\\system.runtime.interopservices\\4.3.0\\system.runtime.interopservices.4.3.0.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\system.security.cryptography.protecteddata\\10.0.4\\system.security.cryptography.protecteddata.10.0.4.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\system.text.encoding\\4.3.0\\system.text.encoding.4.3.0.nupkg.sha512",
+    "C:\\Users\\ASUS\\.nuget\\packages\\system.text.encoding.codepages\\8.0.0\\system.text.encoding.codepages.8.0.0.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\system.text.encodings.web\\10.0.4\\system.text.encodings.web.10.0.4.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\system.text.json\\10.0.4\\system.text.json.10.0.4.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\system.threading\\4.3.0\\system.threading.4.3.0.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\system.threading.tasks\\4.3.0\\system.threading.tasks.4.3.0.nupkg.sha512",
     "C:\\Users\\ASUS\\.nuget\\packages\\twilio\\7.14.3\\twilio.7.14.3.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1103",
+      "level": "Error",
+      "message": "Unable to find a stable package UglyToad.PdfPig with version (>= 0.1.9)\r\n  - Found 2 version(s) in nuget.org [ Nearest version: 1.7.0-custom-5 ]\r\n  - Found 0 version(s) in Microsoft Visual Studio Offline Packages\r\n  - Found 0 version(s) in C:\\Program Files\\dotnet\\library-packs",
+      "libraryId": "UglyToad.PdfPig",
+      "targetGraphs": [
+        "net8.0-windows7.0"
+      ]
+    }
+  ]
 }

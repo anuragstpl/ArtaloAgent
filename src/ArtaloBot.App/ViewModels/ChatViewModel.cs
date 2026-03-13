@@ -6,6 +6,7 @@ using System.Windows;
 using ArtaloBot.Core.Interfaces;
 using ArtaloBot.Core.Models;
 using ArtaloBot.Services.LLM;
+using ArtaloBot.Services.Routing;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -19,7 +20,10 @@ public partial class ChatViewModel : ObservableObject
     private readonly IMemoryService _memoryService;
     private readonly IDebugService _debugService;
     private readonly IMCPService _mcpService;
+    private readonly QueryRouter _queryRouter;
     private CancellationTokenSource? _streamingCts;
+    private CancellationTokenSource? _debounceCts;
+    private const int DebounceDelayMs = 800; // Wait 800ms for additional messages
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasMessages))]
@@ -79,10 +83,13 @@ public partial class ChatViewModel : ObservableObject
         _debugService = debugService;
         _mcpService = mcpService;
 
+        // Initialize query router for intent-based routing
+        _queryRouter = new QueryRouter(mcpService, debugService);
+
         // Subscribe to collection changes to update HasMessages
         Messages.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasMessages));
 
-        _debugService.Info("Chat", "ChatViewModel initialized");
+        _debugService.Info("Chat", "ChatViewModel initialized with QueryRouter");
 
         // Initialize Ollama service by default (no API key needed)
         InitializeOllamaAsync();
@@ -206,8 +213,26 @@ public partial class ChatViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Send message with debounce - allows user to send multiple messages before AI responds.
+    /// Press Enter to queue messages, they'll be sent after a short delay.
+    /// </summary>
     [RelayCommand]
     private async Task SendMessage()
+    {
+        await SendMessageInternal(useDebounce: true);
+    }
+
+    /// <summary>
+    /// Send message immediately without debounce (Shift+Enter or button click).
+    /// </summary>
+    [RelayCommand]
+    private async Task SendMessageImmediate()
+    {
+        await SendMessageInternal(useDebounce: false);
+    }
+
+    private async Task SendMessageInternal(bool useDebounce)
     {
         if (string.IsNullOrWhiteSpace(InputText)) return;
 
@@ -247,9 +272,16 @@ public partial class ChatViewModel : ObservableObject
         // Check if this is a tool-related query (real-time data)
         var isToolRelated = IsToolRelatedQuery(userInput);
 
-        // Only store user message in memory if it's NOT a tool-related query
-        if (!isToolRelated)
+        // Check if this contains personal information that should ALWAYS be stored
+        var containsPersonalInfo = ContainsPersonalInformation(userInput);
+
+        // Store user message in memory if it's NOT a tool-related query OR contains personal info
+        if (!isToolRelated || containsPersonalInfo)
         {
+            if (containsPersonalInfo)
+            {
+                _debugService.Info("Memory", "Personal information detected - storing in memory", userInput);
+            }
             _ = StoreMessageInMemoryAsync(userInput, MessageRole.User);
         }
         else
@@ -257,8 +289,32 @@ public partial class ChatViewModel : ObservableObject
             _debugService.Info("Memory", "Skipping memory storage - tool-related query");
         }
 
-        // Get AI response
-        await GetAIResponseAsync();
+        // Cancel any pending debounce
+        _debounceCts?.Cancel();
+
+        if (useDebounce)
+        {
+            // Start debounce - wait for more messages
+            _debounceCts = new CancellationTokenSource();
+            StatusMessage = "Waiting for more input... (or press Send)";
+
+            try
+            {
+                await Task.Delay(DebounceDelayMs, _debounceCts.Token);
+                // Debounce completed, send to AI
+                await GetAIResponseAsync();
+            }
+            catch (OperationCanceledException)
+            {
+                // Another message came in, debounce was reset - don't trigger AI yet
+                _debugService.Info("Chat", "Debounce cancelled - user sent another message");
+            }
+        }
+        else
+        {
+            // Immediate send
+            await GetAIResponseAsync();
+        }
     }
 
     private async Task StoreMessageInMemoryAsync(string content, MessageRole role)
@@ -280,53 +336,26 @@ public partial class ChatViewModel : ObservableObject
         catch { /* non-critical */ }
     }
 
-    private string BuildMCPToolsPrompt()
-    {
-        var tools = _mcpService.GetAllAvailableTools();
-        if (tools.Count == 0) return string.Empty;
-
-        _debugService.Info("MCP", $"Building tools prompt with {tools.Count} available tools");
-
-        var sb = new StringBuilder();
-        sb.AppendLine("\n## TOOLS");
-        sb.AppendLine("You have tools for real-time data. When user asks about current time, weather, etc., you MUST call a tool.");
-        sb.AppendLine();
-        sb.AppendLine("To call a tool, output ONLY this JSON block (nothing else before it):");
-        sb.AppendLine("```tool_call");
-        sb.AppendLine("{\"tool\": \"TOOL_NAME\", \"arguments\": {\"param\": \"value\"}}");
-        sb.AppendLine("```");
-        sb.AppendLine();
-        sb.AppendLine("Available tools:");
-
-        foreach (var (server, tool) in tools)
-        {
-            sb.AppendLine($"\n{tool.Name}: {tool.Description ?? "No description"}");
-
-            if (tool.InputSchema?.Properties != null && tool.InputSchema.Properties.Count > 0)
-            {
-                var required = tool.InputSchema.Required ?? [];
-                sb.AppendLine("  Parameters:");
-                foreach (var prop in tool.InputSchema.Properties)
-                {
-                    var req = required.Contains(prop.Key) ? " (required)" : "";
-                    sb.AppendLine($"    - {prop.Key}: {prop.Value.Type}{req}");
-                }
-            }
-        }
-
-        sb.AppendLine();
-        sb.AppendLine("Example: User asks 'what time is it in Tokyo?'");
-        sb.AppendLine("You respond with:");
-        sb.AppendLine("```tool_call");
-        sb.AppendLine("{\"tool\": \"get_current_time\", \"arguments\": {\"timezone\": \"Asia/Tokyo\"}}");
-        sb.AppendLine("```");
-
-        _debugService.Info("MCP", $"Tools prompt size: {sb.Length} chars");
-        return sb.ToString();
-    }
+    // Note: BuildMCPToolsPrompt removed - now using QueryRouter for direct tool execution
 
     private bool IsToolRelatedQuery(string query)
     {
+        var lowerQuery = query.ToLowerInvariant();
+
+        // FIRST: Check if this is a memory/personal query - these should ALWAYS use memory
+        var memoryKeywords = new[]
+        {
+            "my name", "who am i", "what's my", "what is my", "do you remember",
+            "did i tell you", "i told you", "you know my", "remember when",
+            "we discussed", "we talked about", "earlier i said", "previously"
+        };
+
+        if (memoryKeywords.Any(keyword => lowerQuery.Contains(keyword)))
+        {
+            _debugService.Info("Chat", "Memory/personal query detected - will search memories", $"Query: {query}");
+            return false; // NOT a tool query - use memory instead
+        }
+
         // Check if the query is asking for real-time information that should use tools
         var toolKeywords = new[]
         {
@@ -345,7 +374,6 @@ public partial class ChatViewModel : ObservableObject
             "read file", "write file", "list files", "create file"
         };
 
-        var lowerQuery = query.ToLowerInvariant();
         var hasToolKeyword = toolKeywords.Any(keyword => lowerQuery.Contains(keyword));
 
         if (hasToolKeyword)
@@ -354,6 +382,58 @@ public partial class ChatViewModel : ObservableObject
         }
 
         return hasToolKeyword;
+    }
+
+    /// <summary>
+    /// Detects if a message contains personal information that should always be stored in memory.
+    /// Examples: "my name is", "I am", "I live in", "my email is"
+    /// </summary>
+    private bool ContainsPersonalInformation(string message)
+    {
+        var lowerMessage = message.ToLowerInvariant();
+
+        var personalInfoPatterns = new[]
+        {
+            "my name is", "i'm called", "call me", "i am called",
+            "i live in", "i'm from", "i am from", "my location",
+            "my email", "my phone", "my number", "my address",
+            "my age is", "i am ", "i'm ", "my birthday",
+            "my favorite", "my favourite", "i like", "i love", "i hate",
+            "i work at", "i work as", "my job", "my profession",
+            "remember that", "don't forget", "keep in mind",
+            "my wife", "my husband", "my child", "my kids", "my family"
+        };
+
+        return personalInfoPatterns.Any(pattern => lowerMessage.Contains(pattern));
+    }
+
+    /// <summary>
+    /// Detects if a message is a short context-dependent response that refers to previous messages.
+    /// Examples: "yes", "ok", "do that", "the first one", "sure", "go ahead"
+    /// </summary>
+    private bool IsContextReferenceMessage(string message)
+    {
+        var trimmed = message.Trim().ToLowerInvariant();
+
+        // Very short messages are likely context references
+        if (trimmed.Length <= 20)
+        {
+            var contextPhrases = new[]
+            {
+                "yes", "no", "ok", "okay", "sure", "yep", "nope", "yeah", "nah",
+                "do it", "do that", "go ahead", "proceed", "continue", "next",
+                "the first", "the second", "the last", "that one", "this one",
+                "option 1", "option 2", "option a", "option b",
+                "correct", "right", "exactly", "perfect",
+                "please", "thanks", "thank you",
+                "why", "how", "what", "when", "where",
+                "more", "less", "again", "explain"
+            };
+
+            return contextPhrases.Any(phrase => trimmed.Contains(phrase)) || trimmed.Length <= 5;
+        }
+
+        return false;
     }
 
     private bool ShouldStoreInMemory(string content, bool isToolRelated)
@@ -381,106 +461,15 @@ public partial class ChatViewModel : ObservableObject
         return dateTime.ToString("MMM d");
     }
 
-    private (string? toolName, Dictionary<string, object>? arguments) ParseToolCall(string response)
+    // Note: ParseToolCall removed - now using QueryRouter for direct tool execution
+
+    private async Task<ILLMService?> GetOrCreateLLMServiceAsync()
     {
-        // Try multiple patterns - models output tool calls differently
-        var patterns = new[]
-        {
-            @"```tool_call\s*\n?\s*(\{[\s\S]*?\})\s*\n?```",  // Standard format
-            @"```json\s*\n?\s*(\{[\s\S]*?""tool""[\s\S]*?\})\s*\n?```",  // json block with tool
-            @"```\s*\n?\s*(\{[\s\S]*?""tool""[\s\S]*?\})\s*\n?```",  // plain code block
-            @"(\{[\s\S]*?""tool""\s*:\s*""[^""]+""[\s\S]*?\})"  // Raw JSON with tool key
-        };
-
-        string? jsonMatch = null;
-        foreach (var pattern in patterns)
-        {
-            var match = Regex.Match(response, pattern, RegexOptions.IgnoreCase);
-            if (match.Success)
-            {
-                jsonMatch = match.Groups[1].Value.Trim();
-                _debugService.Info("MCP", $"Found tool call with pattern", pattern);
-                break;
-            }
-        }
-
-        if (jsonMatch == null)
-        {
-            return (null, null);
-        }
-
-        try
-        {
-            using var doc = JsonDocument.Parse(jsonMatch);
-            var root = doc.RootElement;
-
-            string? toolName = null;
-
-            // Try different property names for the tool
-            if (root.TryGetProperty("tool", out var toolProp))
-                toolName = toolProp.GetString();
-            else if (root.TryGetProperty("name", out var nameProp))
-                toolName = nameProp.GetString();
-            else if (root.TryGetProperty("function", out var funcProp))
-                toolName = funcProp.GetString();
-
-            if (string.IsNullOrEmpty(toolName))
-            {
-                _debugService.Warning("MCP", "Tool call JSON found but no tool name");
-                return (null, null);
-            }
-
-            Dictionary<string, object>? arguments = null;
-
-            // Try different property names for arguments
-            if (root.TryGetProperty("arguments", out var argsElement))
-                arguments = JsonSerializer.Deserialize<Dictionary<string, object>>(argsElement.GetRawText());
-            else if (root.TryGetProperty("args", out var args2Element))
-                arguments = JsonSerializer.Deserialize<Dictionary<string, object>>(args2Element.GetRawText());
-            else if (root.TryGetProperty("parameters", out var paramsElement))
-                arguments = JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText());
-
-            _debugService.Info("MCP", $"Parsed tool call: {toolName}",
-                $"Arguments: {JsonSerializer.Serialize(arguments)}");
-
-            return (toolName, arguments);
-        }
-        catch (Exception ex)
-        {
-            _debugService.Warning("MCP", $"Failed to parse tool call: {ex.Message}", jsonMatch);
-            return (null, null);
-        }
-    }
-
-    private async Task<string?> ExecuteMCPToolAsync(string toolName, Dictionary<string, object>? arguments, CancellationToken cancellationToken)
-    {
-        _debugService.Info("MCP", $"Executing tool: {toolName}");
-
-        var result = await _mcpService.CallToolByNameAsync(toolName, arguments, cancellationToken);
-
-        if (result.Success)
-        {
-            _debugService.Success("MCP", $"Tool {toolName} executed successfully",
-                result.Content?.Length > 200 ? result.Content[..200] + "..." : result.Content);
-            return result.Content;
-        }
-        else
-        {
-            _debugService.Error("MCP", $"Tool {toolName} failed", result.Error);
-            return $"Error: {result.Error}";
-        }
-    }
-
-    private async Task GetAIResponseAsync()
-    {
-        if (CurrentSession == null) return;
-
         _debugService.Info("LLM", $"Initializing {SelectedProvider} service");
 
         var service = _llmFactory.GetService(SelectedProvider);
         if (service == null)
         {
-            // For Ollama, create service without API key
             if (SelectedProvider == LLMProviderType.Ollama)
             {
                 _debugService.Info("LLM", "Creating Ollama service (no API key required)");
@@ -494,7 +483,7 @@ public partial class ChatViewModel : ObservableObject
                 {
                     _debugService.Error("LLM", $"No API key configured for {SelectedProvider}");
                     StatusMessage = $"Please configure {SelectedProvider} API key in Settings";
-                    return;
+                    return null;
                 }
 
                 _debugService.Info("LLM", $"Creating {SelectedProvider} service with API key");
@@ -507,10 +496,20 @@ public partial class ChatViewModel : ObservableObject
         {
             _debugService.Error("LLM", "Failed to initialize LLM service");
             StatusMessage = "Failed to initialize LLM service";
-            return;
+            return null;
         }
 
         _debugService.Success("LLM", $"{SelectedProvider} service ready");
+        return service;
+    }
+
+    private async Task GetAIResponseAsync()
+    {
+        if (CurrentSession == null) return;
+
+        // Get the LLM service
+        var service = await GetOrCreateLLMServiceAsync();
+        if (service == null) return;
 
         // Create assistant message placeholder
         var assistantMessage = new ChatMessage
@@ -527,7 +526,6 @@ public partial class ChatViewModel : ObservableObject
         Messages.Add(messageVm);
 
         IsStreaming = true;
-        StatusMessage = "Generating response...";
         _streamingCts = new CancellationTokenSource();
 
         try
@@ -535,245 +533,176 @@ public partial class ChatViewModel : ObservableObject
             var settings = await _settingsService.GetDefaultLLMSettingsAsync();
             settings.Model = SelectedModel;
 
-            _debugService.Info("LLM", $"Using model: {SelectedModel}",
-                $"Temperature: {settings.Temperature}, MaxTokens: {settings.MaxTokens}");
-
-            // ── Determine query type ────────────────────────────────────────
+            // Get the last user message for routing
             var lastUserMsg = Messages
                 .Where(m => m.Role == MessageRole.User && !m.IsStreaming)
                 .LastOrDefault()?.Content ?? string.Empty;
 
-            var isToolRelatedQuery = !string.IsNullOrEmpty(lastUserMsg) && IsToolRelatedQuery(lastUserMsg);
-            var hasAvailableTools = _mcpService.GetAllAvailableTools().Count > 0;
+            // ═══════════════════════════════════════════════════════════════
+            // ROUTE THE QUERY using QueryRouter
+            // ═══════════════════════════════════════════════════════════════
+            var route = _queryRouter.Route(lastUserMsg);
+            _debugService.Info("Router", $"Query routed to: {route.RouteType}", route.Reason);
 
-            _debugService.Info("Chat", $"Query analysis",
-                $"IsToolRelated: {isToolRelatedQuery}, HasTools: {hasAvailableTools}");
+            string? toolResultContext = null;
+            string? memoryContext = null;
+            bool isToolQuery = route.RouteType == QueryRouteType.Tool;
 
-            // ── Memory injection ────────────────────────────────────────────
-            var memSettings = await _settingsService.GetMemorySettingsAsync();
-            string memoryContext = string.Empty;
-
-            // Only search memory for NON-tool-related queries
-            // Tool queries should always use fresh tool calls, not cached memory
-            if (memSettings.IsEnabled && _memoryService.IsReady && !isToolRelatedQuery)
+            // ── Handle TOOL route ──────────────────────────────────────────
+            if (route.RouteType == QueryRouteType.Tool && !string.IsNullOrEmpty(route.ToolName))
             {
-                _debugService.Info("Memory", "Memory enabled, searching for relevant context",
-                    $"Provider: {memSettings.EmbeddingProvider}, Model: {memSettings.EmbeddingModel}\nCrossSession: {memSettings.CrossSessionMemory}, StoreGlobally: {memSettings.StoreGlobally}");
+                StatusMessage = $"Calling {route.ToolName}...";
+                _debugService.Info("Tool", $"Executing tool directly: {route.ToolName}",
+                    $"Arguments: {JsonSerializer.Serialize(route.ToolArguments)}");
 
-                if (!string.IsNullOrEmpty(lastUserMsg))
+                var toolResult = await _mcpService.CallToolByNameAsync(
+                    route.ToolName,
+                    route.ToolArguments,
+                    _streamingCts.Token);
+
+                if (toolResult.Success)
+                {
+                    _debugService.Success("Tool", $"Tool {route.ToolName} completed", toolResult.Content);
+                    toolResultContext = $"You called the tool '{route.ToolName}' and it returned:\n{toolResult.Content}\n\nNow provide a helpful, natural response to the user based on this result.";
+                }
+                else
+                {
+                    _debugService.Error("Tool", $"Tool {route.ToolName} failed", toolResult.Error);
+                    toolResultContext = $"The tool '{route.ToolName}' failed with error: {toolResult.Error}\n\nApologize to the user and explain what went wrong.";
+                }
+            }
+
+            // ── Handle MEMORY route ────────────────────────────────────────
+            if (route.RouteType == QueryRouteType.Memory || route.RouteType == QueryRouteType.Direct)
+            {
+                var memSettings = await _settingsService.GetMemorySettingsAsync();
+
+                if (memSettings.IsEnabled && _memoryService.IsReady)
                 {
                     StatusMessage = "Searching memories...";
+                    _debugService.Info("Memory", "Searching for relevant memories");
 
-                    // Pass null for sessionId to search ALL memories globally
-                    // The service will decide based on CrossSessionMemory setting
                     var memories = await _memoryService.SearchMemoriesAsync(
                         lastUserMsg,
-                        sessionId: null,  // Search globally
+                        sessionId: null,
                         topK: memSettings.MaxMemoriesToInject,
                         similarityThreshold: memSettings.SimilarityThreshold,
                         cancellationToken: _streamingCts.Token);
 
                     if (memories.Count > 0)
                     {
-                        _debugService.Success("Memory", $"Injecting {memories.Count} memories into context");
+                        _debugService.Success("Memory", $"Found {memories.Count} relevant memories");
 
                         var sb = new StringBuilder();
-                        sb.AppendLine("## CONTEXT (Use this to answer)");
-                        sb.AppendLine("Answer ONLY based on this context. If the answer is not in the context, say you don't know.");
+                        sb.AppendLine("## REMEMBERED INFORMATION");
+                        sb.AppendLine("Use this information from past conversations to answer:");
                         sb.AppendLine();
                         foreach (var mem in memories)
                         {
-                            var roleName = mem.Entry.Role == MessageRole.User ? "Q" : "A";
-                            sb.AppendLine($"{roleName}: {mem.Entry.Content}");
+                            var roleName = mem.Entry.Role == MessageRole.User ? "User" : "Assistant";
+                            var timeAgo = GetTimeAgo(mem.Entry.CreatedAt);
+                            sb.AppendLine($"- [{timeAgo}] {roleName}: \"{mem.Entry.Content}\"");
                         }
                         memoryContext = sb.ToString();
                     }
                     else
                     {
-                        _debugService.Info("Memory", "No relevant memories found for this query");
+                        _debugService.Info("Memory", "No relevant memories found");
                     }
                 }
             }
-            else if (isToolRelatedQuery)
-            {
-                _debugService.Info("Memory", "Skipping memory search - this is a tool-related query (real-time data needed)");
-            }
-            else
-            {
-                _debugService.Info("Memory", "Memory disabled or not ready, skipping");
-            }
 
-            // Build effective system prompt
-            var effectiveSystemPrompt = settings.SystemPrompt;
+            // ═══════════════════════════════════════════════════════════════
+            // BUILD SYSTEM PROMPT (clean, no tool instructions)
+            // ═══════════════════════════════════════════════════════════════
+            var systemPromptParts = new List<string>();
 
-            // ── MCP Tools injection ────────────────────────────────────────
-            var mcpToolsPrompt = BuildMCPToolsPrompt();
-
-            // Warn if tool-related query but no tools available
-            if (isToolRelatedQuery && string.IsNullOrEmpty(mcpToolsPrompt))
+            // Base system prompt
+            if (!string.IsNullOrEmpty(settings.SystemPrompt))
             {
-                _debugService.Warning("MCP", "Tool-related query detected but NO MCP tools are connected!",
-                    "Go to Skills page and connect your MCP servers");
+                systemPromptParts.Add(settings.SystemPrompt);
             }
 
-            // For tool-related queries, put tools FIRST so the model sees them
-            if (isToolRelatedQuery && !string.IsNullOrEmpty(mcpToolsPrompt))
+            // Add tool result context if we executed a tool
+            if (!string.IsNullOrEmpty(toolResultContext))
             {
-                effectiveSystemPrompt = mcpToolsPrompt + "\n\n" + (effectiveSystemPrompt ?? "");
-                _debugService.Info("LLM", "Tool-related query: Tools placed at START of system prompt");
+                systemPromptParts.Add(toolResultContext);
             }
-            else if (!string.IsNullOrEmpty(mcpToolsPrompt))
-            {
-                effectiveSystemPrompt = string.IsNullOrEmpty(effectiveSystemPrompt)
-                    ? mcpToolsPrompt
-                    : effectiveSystemPrompt + "\n\n" + mcpToolsPrompt;
-                _debugService.Info("LLM", "System prompt augmented with MCP tools");
-            }
-            // ───────────────────────────────────────────────────────────────
 
-            // Inject memory context (only for non-tool queries, already filtered above)
+            // Add memory context
             if (!string.IsNullOrEmpty(memoryContext))
             {
-                effectiveSystemPrompt = string.IsNullOrEmpty(effectiveSystemPrompt)
-                    ? memoryContext
-                    : effectiveSystemPrompt + "\n\n" + memoryContext;
-                _debugService.Info("LLM", "System prompt augmented with memory context");
+                systemPromptParts.Add(memoryContext);
             }
 
-            settings.SystemPrompt = effectiveSystemPrompt;
-            // ───────────────────────────────────────────────────────────────
+            // Check for context references (short messages like "yes", "ok")
+            var lastUserMessages = Messages.Where(m => m.Role == MessageRole.User).TakeLast(3).ToList();
+            if (lastUserMessages.Any(m => IsContextReferenceMessage(m.Content)))
+            {
+                systemPromptParts.Insert(0, "IMPORTANT: The user's message refers to the previous conversation. Consider the full context.");
+            }
 
+            settings.SystemPrompt = string.Join("\n\n", systemPromptParts);
+            // ═══════════════════════════════════════════════════════════════
+
+            // Build chat messages
             var chatMessages = Messages
                 .Where(m => !m.IsStreaming || m == messageVm)
-                .Select(m => new ChatMessage
-                {
-                    Role = m.Role,
-                    Content = m.Content
-                })
-                .SkipLast(1) // Skip the empty assistant message
+                .Select(m => new ChatMessage { Role = m.Role, Content = m.Content })
+                .SkipLast(1)
                 .ToList();
 
-            _debugService.Info("LLM", $"Sending request with {chatMessages.Count} messages",
-                $"System prompt: {effectiveSystemPrompt?.Length ?? 0} chars");
+            _debugService.Info("LLM", $"Sending to LLM with {chatMessages.Count} messages",
+                $"System prompt: {settings.SystemPrompt?.Length ?? 0} chars");
 
-            // Verify Ollama is reachable before sending
+            // Verify Ollama connection
             if (SelectedProvider == LLMProviderType.Ollama)
             {
                 StatusMessage = "Connecting to Ollama...";
-                var isConnected = await service.ValidateConnectionAsync(_streamingCts.Token);
-                if (!isConnected)
+                if (!await service.ValidateConnectionAsync(_streamingCts.Token))
                 {
-                    throw new InvalidOperationException("Cannot connect to Ollama. Make sure Ollama is running (ollama serve).");
+                    throw new InvalidOperationException("Cannot connect to Ollama. Make sure Ollama is running.");
                 }
             }
 
+            // Stream the response
+            StatusMessage = $"Waiting for {SelectedModel}...";
             var responseBuilder = new StringBuilder();
             var tokenCount = 0;
             var startTime = DateTime.Now;
-
-            StatusMessage = $"Waiting for {SelectedModel}...";
-
-            _debugService.Info("LLM", "Starting streaming response...");
 
             await foreach (var chunk in service.StreamMessageAsync(chatMessages, settings, _streamingCts.Token))
             {
                 responseBuilder.Append(chunk);
                 tokenCount++;
 
-                // Update status to show progress
-                if (tokenCount == 1)
-                {
-                    StatusMessage = "Generating response...";
-                }
+                if (tokenCount == 1) StatusMessage = "Generating response...";
 
-                var currentContent = responseBuilder.ToString();
-
-                // Update on UI thread - use BeginInvoke to avoid blocking the async stream
                 Application.Current.Dispatcher.BeginInvoke(() =>
                 {
-                    messageVm.Content = currentContent;
+                    messageVm.Content = responseBuilder.ToString();
                 });
             }
 
+            var fullResponse = responseBuilder.ToString();
             var elapsed = DateTime.Now - startTime;
 
-            // Check for MCP tool calls in the response
-            var fullResponse = responseBuilder.ToString();
-            var (toolName, toolArgs) = ParseToolCall(fullResponse);
-
-            if (toolName != null)
-            {
-                _debugService.Info("MCP", $"Tool call detected: {toolName}");
-                StatusMessage = $"Executing tool: {toolName}...";
-
-                // Execute the tool
-                var toolResult = await ExecuteMCPToolAsync(toolName, toolArgs, _streamingCts?.Token ?? CancellationToken.None);
-
-                // Add tool result to the conversation and get a follow-up response
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    messageVm.Content = fullResponse + $"\n\n**Tool Result:**\n```\n{toolResult}\n```";
-                });
-
-                // Add the tool response as a system message and get final response
-                var toolResultMessage = new ChatMessage
-                {
-                    Role = MessageRole.User,
-                    Content = $"Tool '{toolName}' returned: {toolResult}\n\nNow provide a natural language response to the user based on this result."
-                };
-
-                var followUpMessages = Messages
-                    .Where(m => !m.IsStreaming || m == messageVm)
-                    .Select(m => new ChatMessage
-                    {
-                        Role = m.Role,
-                        Content = m.Content
-                    })
-                    .ToList();
-                followUpMessages.Add(toolResultMessage);
-
-                // Get follow-up response
-                _debugService.Info("LLM", "Getting follow-up response after tool execution");
-                StatusMessage = "Generating response...";
-
-                var followUpBuilder = new StringBuilder();
-                await foreach (var chunk in service.StreamMessageAsync(followUpMessages, settings, _streamingCts?.Token ?? CancellationToken.None))
-                {
-                    followUpBuilder.Append(chunk);
-                    var currentContent = followUpBuilder.ToString();
-                    Application.Current.Dispatcher.BeginInvoke(() =>
-                    {
-                        messageVm.Content = currentContent;
-                    });
-                }
-
-                fullResponse = followUpBuilder.ToString();
-            }
-
-            // Save the complete message
+            // Save the message
             assistantMessage.Content = fullResponse;
             assistantMessage.IsStreaming = false;
 
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                messageVm.IsStreaming = false;
-            });
+            Application.Current.Dispatcher.Invoke(() => messageVm.IsStreaming = false);
 
             _debugService.Success("LLM", $"Response complete",
-                $"Tokens: ~{tokenCount}, Time: {elapsed.TotalSeconds:F2}s, Length: {assistantMessage.Content.Length} chars");
+                $"Tokens: ~{tokenCount}, Time: {elapsed.TotalSeconds:F2}s");
 
             await _chatRepository.AddMessageAsync(assistantMessage);
             StatusMessage = IsMemoryEnabled ? $"Ready · {MemoryCount} memories" : "Ready";
 
-            // Store assistant response in memory ONLY if it's not a tool-related response
-            if (!isToolRelatedQuery && ShouldStoreInMemory(assistantMessage.Content, isToolRelatedQuery))
+            // Store in memory if not a tool query
+            if (!isToolQuery && ShouldStoreInMemory(fullResponse, isToolQuery))
             {
-                _debugService.Info("Memory", "Storing assistant response in memory");
-                _ = StoreMessageInMemoryAsync(assistantMessage.Content, MessageRole.Assistant);
-            }
-            else
-            {
-                _debugService.Info("Memory", "Skipping memory storage - tool-related or not suitable");
+                _ = StoreMessageInMemoryAsync(fullResponse, MessageRole.Assistant);
             }
         }
         catch (OperationCanceledException)
