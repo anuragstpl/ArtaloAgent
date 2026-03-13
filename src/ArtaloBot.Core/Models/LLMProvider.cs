@@ -22,8 +22,8 @@ public class LLMProvider
 public class LLMSettings
 {
     public string Model { get; set; } = string.Empty;
-    public double Temperature { get; set; } = 0.7;
-    public int MaxTokens { get; set; } = 4096;
-    public double TopP { get; set; } = 1.0;
-    public string SystemPrompt { get; set; } = "You are a helpful assistant.";
+    public double Temperature { get; set; } = 0.3; // Lower temperature for more accurate/factual responses
+    public int MaxTokens { get; set; } = 1024; // Reduced for faster responses
+    public double TopP { get; set; } = 0.9;
+    public string SystemPrompt { get; set; } = "You are a helpful assistant. Answer based on the provided context. Be concise.";
 }

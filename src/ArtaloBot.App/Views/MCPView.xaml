@@ -27,11 +27,11 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="MCP Servers (Skills)"
+                    <TextBlock Text="Skills"
                                FontSize="24"
                                FontWeight="SemiBold"
                                Foreground="{StaticResource TextPrimaryBrush}" />
-                    <TextBlock Text="Configure external tools via Model Context Protocol"
+                    <TextBlock Text="Configure external tools via MCP (Model Context Protocol)"
                                FontSize="13"
                                Foreground="{StaticResource TextSecondaryBrush}"
                                Margin="0,4,0,0" />
@@ -44,7 +44,7 @@
                         Padding="20,0">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="Plus" Width="18" Height="18" Margin="0,0,8,0" />
-                        <TextBlock Text="Add Server" />
+                        <TextBlock Text="Add Skill" />
                     </StackPanel>
                 </Button>
             </Grid>
@@ -160,17 +160,17 @@
                     <StackPanel Visibility="{Binding SelectedServer, Converter={StaticResource InverseBoolToVisibilityConverter}}"
                                 VerticalAlignment="Center"
                                 HorizontalAlignment="Center">
-                        <materialDesign:PackIcon Kind="ServerNetwork"
+                        <materialDesign:PackIcon Kind="Puzzle"
                                                  Width="64" Height="64"
                                                  Foreground="{StaticResource TextSecondaryBrush}"
                                                  HorizontalAlignment="Center"
                                                  Opacity="0.5" />
-                        <TextBlock Text="Select a server to view details"
+                        <TextBlock Text="Select a skill to view details"
                                    FontSize="16"
                                    Foreground="{StaticResource TextSecondaryBrush}"
                                    HorizontalAlignment="Center"
                                    Margin="0,16,0,0" />
-                        <TextBlock Text="or click 'Add Server' to create a new one"
+                        <TextBlock Text="or click 'Add Skill' to create a new one"
                                    FontSize="13"
                                    Foreground="{StaticResource TextSecondaryBrush}"
                                    HorizontalAlignment="Center"
@@ -306,7 +306,7 @@
                                        Foreground="{StaticResource TextPrimaryBrush}"
                                        Margin="0,0,0,12" />
 
-                            <TextBlock Text="Connect to the server to see available tools"
+                            <TextBlock Text="Connect to see available tools"
                                        FontSize="13"
                                        Foreground="{StaticResource TextSecondaryBrush}"
                                        Visibility="{Binding IsConnected, Converter={StaticResource InverseBoolToVisibilityConverter}}" />
@@ -396,6 +396,218 @@
             </ScrollViewer>
         </Grid>
 
+        <!-- Preset Selection Dialog -->
+        <Border Grid.RowSpan="2"
+                Background="#80000000"
+                Visibility="{Binding IsSelectingPreset, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Border Background="{StaticResource SurfaceBrush}"
+                    CornerRadius="12"
+                    Width="700"
+                    MaxHeight="650"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Padding="24">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <StackPanel Grid.Row="0" Margin="0,0,0,16">
+                        <TextBlock Text="Add Skill"
+                                   FontSize="20"
+                                   FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextPrimaryBrush}" />
+                        <TextBlock Text="Select a pre-configured skill or create a custom one"
+                                   FontSize="13"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   Margin="0,4,0,0" />
+                    </StackPanel>
+
+                    <!-- Category Filter -->
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
+                        <TextBlock Text="Category:"
+                                   FontSize="13"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,8,0" />
+                        <ComboBox ItemsSource="{Binding PresetCategories}"
+                                  SelectedItem="{Binding SelectedCategory}"
+                                  Width="150"
+                                  Style="{StaticResource MaterialDesignComboBox}" />
+                    </StackPanel>
+
+                    <!-- Preset List -->
+                    <Border Grid.Row="2"
+                            Background="{StaticResource BackgroundBrush}"
+                            CornerRadius="8"
+                            Padding="4">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding AvailablePresets}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{StaticResource SurfaceBrush}"
+                                                BorderBrush="{StaticResource BorderBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="6"
+                                                Padding="12"
+                                                Margin="4"
+                                                Cursor="Hand">
+                                            <Border.InputBindings>
+                                                <MouseBinding MouseAction="LeftClick"
+                                                              Command="{Binding DataContext.SelectPresetCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                              CommandParameter="{Binding}" />
+                                            </Border.InputBindings>
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Value="True">
+                                                            <DataTrigger.Binding>
+                                                                <MultiBinding Converter="{StaticResource EqualityConverter}">
+                                                                    <Binding />
+                                                                    <Binding Path="DataContext.SelectedPreset" RelativeSource="{RelativeSource AncestorType=UserControl}" />
+                                                                </MultiBinding>
+                                                            </DataTrigger.Binding>
+                                                            <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                                                            <Setter Property="BorderThickness" Value="2" />
+                                                        </DataTrigger>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="{StaticResource SurfaceLightBrush}" />
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <Border Grid.Column="0"
+                                                        Width="40" Height="40"
+                                                        CornerRadius="8"
+                                                        Background="{StaticResource AccentLightBrush}"
+                                                        Margin="0,0,12,0">
+                                                    <materialDesign:PackIcon Kind="{Binding Icon}"
+                                                                             Width="20" Height="20"
+                                                                             Foreground="{StaticResource AccentBrush}"
+                                                                             HorizontalAlignment="Center"
+                                                                             VerticalAlignment="Center" />
+                                                </Border>
+
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Name}"
+                                                               FontSize="14"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{StaticResource TextPrimaryBrush}" />
+                                                    <TextBlock Text="{Binding Description}"
+                                                               FontSize="12"
+                                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               Margin="0,2,0,0" />
+                                                </StackPanel>
+
+                                                <Border Grid.Column="2"
+                                                        Background="{StaticResource BackgroundBrush}"
+                                                        CornerRadius="4"
+                                                        Padding="8,4"
+                                                        VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Category}"
+                                                               FontSize="11"
+                                                               Foreground="{StaticResource TextSecondaryBrush}" />
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Environment Variable Inputs (when preset selected) -->
+                    <Border Grid.Row="3"
+                            Margin="0,12,0,0"
+                            Visibility="{Binding SelectedPreset, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <StackPanel>
+                            <TextBlock Text="Configuration"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       Margin="0,0,0,8"
+                                       Visibility="{Binding EnvVarInputs.Count, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                            <ItemsControl ItemsSource="{Binding EnvVarInputs}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="0,0,0,12">
+                                            <TextBlock FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4">
+                                                <Run Text="{Binding DisplayName, Mode=OneWay}" />
+                                                <Run Text=" - " />
+                                                <Run Text="{Binding Description, Mode=OneWay}" />
+                                            </TextBlock>
+                                            <TextBox Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource Win11TextBox}"
+                                                     Height="36"
+                                                     FontFamily="Consolas" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock Text="{Binding SelectedPreset.SetupInstructions}"
+                                       FontSize="12"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       TextWrapping="Wrap"
+                                       Visibility="{Binding SelectedPreset.SetupInstructions, Converter={StaticResource NullToVisibilityConverter}}"
+                                       Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Buttons -->
+                    <Grid Grid.Row="4" Margin="0,16,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Button Grid.Column="0"
+                                Style="{StaticResource Win11SecondaryButton}"
+                                Command="{Binding StartAddCustomCommand}"
+                                Height="40"
+                                Padding="16,0">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Cog" Width="16" Height="16" Margin="0,0,8,0" />
+                                <TextBlock Text="Custom Config" />
+                            </StackPanel>
+                        </Button>
+
+                        <StackPanel Grid.Column="2" Orientation="Horizontal">
+                            <Button Style="{StaticResource Win11SecondaryButton}"
+                                    Command="{Binding CancelPresetSelectionCommand}"
+                                    Height="40"
+                                    Padding="24,0"
+                                    Margin="0,0,12,0">
+                                <TextBlock Text="Cancel" />
+                            </Button>
+                            <Button Style="{StaticResource Win11PrimaryButton}"
+                                    Command="{Binding ApplyPresetCommand}"
+                                    IsEnabled="{Binding SelectedPreset, Converter={StaticResource BoolToVisibilityConverter}}"
+                                    Height="40"
+                                    Padding="24,0">
+                                <TextBlock Text="Add Skill" />
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Border>
+
         <!-- Edit Dialog Overlay -->
         <Border Grid.RowSpan="2"
                 Background="#80000000"
@@ -417,12 +629,12 @@
                                 <Binding Path="DataContext.IsAddingNew"
                                          RelativeSource="{RelativeSource AncestorType=UserControl}"
                                          Converter="{StaticResource BoolToVisibilityConverter}"
-                                         ConverterParameter="Add New Server|Edit Server" />
+                                         ConverterParameter="Add New Skill|Edit Skill" />
                             </TextBlock.Text>
                         </TextBlock>
 
                         <!-- Name -->
-                        <TextBlock Text="Server Name" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
+                        <TextBlock Text="Skill Name" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6" />
                         <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource Win11TextBox}"
                                  Height="40"

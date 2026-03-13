@@ -15,3 +15,4 @@ D:\Projects\ArtaloBot\src\ArtaloBot.Data\obj\Debug\net8.0\refint\ArtaloBot.Data.
 D:\Projects\ArtaloBot\src\ArtaloBot.Data\obj\Debug\net8.0\ArtaloBot.Data.pdb
 D:\Projects\ArtaloBot\src\ArtaloBot.Data\obj\Debug\net8.0\ArtaloBot.Data.genruntimeconfig.cache
 D:\Projects\ArtaloBot\src\ArtaloBot.Data\obj\Debug\net8.0\ref\ArtaloBot.Data.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.Data\obj\Debug\net8.0\ArtaloBot.Data.sourcelink.json

@@ -10,3 +10,4 @@ D:\Projects\ArtaloBot\src\ArtaloBot.Core\obj\Debug\net8.0\ArtaloBot.Core.dll
 D:\Projects\ArtaloBot\src\ArtaloBot.Core\obj\Debug\net8.0\refint\ArtaloBot.Core.dll
 D:\Projects\ArtaloBot\src\ArtaloBot.Core\obj\Debug\net8.0\ArtaloBot.Core.pdb
 D:\Projects\ArtaloBot\src\ArtaloBot.Core\obj\Debug\net8.0\ref\ArtaloBot.Core.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.Core\obj\Debug\net8.0\ArtaloBot.Core.sourcelink.json

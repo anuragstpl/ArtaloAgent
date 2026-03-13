@@ -3,6 +3,9 @@
   "WorkspaceRootPath": "D:\\Projects\\ArtaloBot\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\ASUS\\AppData\\Local\\Temp\\.vsdbgsrc\\0a84cc53936b314ba955b54f50bf4796d8234943f3fd7b93873381b45d404026\\XamlReader.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{D99B834B-42AB-4A7A-B432-F9B0819C7145}|src\\ArtaloBot.Data\\ArtaloBot.Data.csproj|d:\\projects\\artalobot\\src\\artalobot.data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{D99B834B-42AB-4A7A-B432-F9B0819C7145}|src\\ArtaloBot.Data\\ArtaloBot.Data.csproj|solutionrelative:src\\artalobot.data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -38,7 +41,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Bookmark",
@@ -50,7 +53,18 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
+              "Title": "XamlReader.cs",
+              "DocumentMoniker": "C:\\Users\\ASUS\\AppData\\Local\\Temp\\.vsdbgsrc\\0a84cc53936b314ba955b54f50bf4796d8234943f3fd7b93873381b45d404026\\XamlReader.cs",
+              "ToolTip": "C:\\Users\\ASUS\\AppData\\Local\\Temp\\.vsdbgsrc\\0a84cc53936b314ba955b54f50bf4796d8234943f3fd7b93873381b45d404026\\XamlReader.cs [Read Only]",
+              "ViewState": "AgIAAKsBAAAAAAAAAAAewLUBAAACAAAAAQAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-13T00:41:08.139Z",
+              "EditorCaption": " [Read Only]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
               "Title": "MemoryEntry.cs",
               "DocumentMoniker": "D:\\Projects\\ArtaloBot\\src\\ArtaloBot.Core\\Models\\MemoryEntry.cs",
               "RelativeDocumentMoniker": "src\\ArtaloBot.Core\\Models\\MemoryEntry.cs",
@@ -58,12 +72,11 @@
               "RelativeToolTip": "src\\ArtaloBot.Core\\Models\\MemoryEntry.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAD0AAAA/AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-12T15:03:10.669Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-12T15:03:10.669Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "AppDbContext.cs",
               "DocumentMoniker": "D:\\Projects\\ArtaloBot\\src\\ArtaloBot.Data\\AppDbContext.cs",
               "RelativeDocumentMoniker": "src\\ArtaloBot.Data\\AppDbContext.cs",
@@ -76,7 +89,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 5,
               "Title": "SettingsRepository.cs",
               "DocumentMoniker": "D:\\Projects\\ArtaloBot\\src\\ArtaloBot.Data\\Repositories\\SettingsRepository.cs",
               "RelativeDocumentMoniker": "src\\ArtaloBot.Data\\Repositories\\SettingsRepository.cs",
@@ -84,24 +97,22 @@
               "RelativeToolTip": "src\\ArtaloBot.Data\\Repositories\\SettingsRepository.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-12T14:55:08.858Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-12T14:55:08.858Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 6,
               "Title": "SettingsView.xaml",
               "DocumentMoniker": "D:\\Projects\\ArtaloBot\\src\\ArtaloBot.App\\Views\\SettingsView.xaml",
               "RelativeDocumentMoniker": "src\\ArtaloBot.App\\Views\\SettingsView.xaml",
               "ToolTip": "D:\\Projects\\ArtaloBot\\src\\ArtaloBot.App\\Views\\SettingsView.xaml",
               "RelativeToolTip": "src\\ArtaloBot.App\\Views\\SettingsView.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2026-03-12T14:45:45.794Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-12T14:45:45.794Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "App.xaml.cs",
               "DocumentMoniker": "D:\\Projects\\ArtaloBot\\src\\ArtaloBot.App\\App.xaml.cs",
               "RelativeDocumentMoniker": "src\\ArtaloBot.App\\App.xaml.cs",
@@ -109,12 +120,11 @@
               "RelativeToolTip": "src\\ArtaloBot.App\\App.xaml.cs",
               "ViewState": "AgIAABkAAAAAAAAAAAAewCMAAAAEAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-12T14:43:05.109Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-12T14:43:05.109Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "AssemblyInfo.cs",
               "DocumentMoniker": "D:\\Projects\\ArtaloBot\\src\\ArtaloBot.App\\AssemblyInfo.cs",
               "RelativeDocumentMoniker": "src\\ArtaloBot.App\\AssemblyInfo.cs",
@@ -122,20 +132,18 @@
               "RelativeToolTip": "src\\ArtaloBot.App\\AssemblyInfo.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-12T14:55:20.261Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-12T14:55:20.261Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 7,
               "Title": "App.xaml",
               "DocumentMoniker": "D:\\Projects\\ArtaloBot\\src\\ArtaloBot.App\\App.xaml",
               "RelativeDocumentMoniker": "src\\ArtaloBot.App\\App.xaml",
               "ToolTip": "D:\\Projects\\ArtaloBot\\src\\ArtaloBot.App\\App.xaml",
               "RelativeToolTip": "src\\ArtaloBot.App\\App.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
-              "WhenOpened": "2026-03-12T13:26:14.658Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-12T13:26:14.658Z"
             }
           ]
         }

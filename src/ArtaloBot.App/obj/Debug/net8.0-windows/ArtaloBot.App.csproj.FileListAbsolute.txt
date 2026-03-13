@@ -128,3 +128,4 @@ D:\Projects\ArtaloBot\src\ArtaloBot.App\obj\Debug\net8.0-windows\Views\DebugWind
 D:\Projects\ArtaloBot\src\ArtaloBot.App\obj\Debug\net8.0-windows\Views\DebugWindow.g.cs
 D:\Projects\ArtaloBot\src\ArtaloBot.App\obj\Debug\net8.0-windows\Views\MCPView.g.cs
 D:\Projects\ArtaloBot\src\ArtaloBot.App\obj\Debug\net8.0-windows\Views\MCPView.baml
+D:\Projects\ArtaloBot\src\ArtaloBot.App\obj\Debug\net8.0-windows\ArtaloBot.App.sourcelink.json

@@ -49,8 +49,14 @@ public partial class App : Application
         services.AddDbContextFactory<AppDbContext>(options =>
             options.UseSqlite($"Data Source={dbPath}"), ServiceLifetime.Singleton);
 
-        // HTTP Client
+        // HTTP Client with timeout configuration
         services.AddHttpClient();
+
+        // Configure Ollama HttpClient with extended timeout for slow models
+        services.AddHttpClient("Ollama", client =>
+        {
+            client.Timeout = TimeSpan.FromMinutes(5); // Extended timeout for large responses
+        });
 
         // Debug Service (must be registered early)
         services.AddSingleton<IDebugService, DebugService>();
@@ -102,7 +108,7 @@ public partial class App : Application
         services.AddTransient<SettingsViewModel>();
         services.AddTransient<SessionsViewModel>();
         services.AddTransient<ChannelsViewModel>();
-        services.AddTransient<MCPViewModel>();
+        services.AddSingleton<MCPViewModel>();
 
         // Services
         services.AddSingleton<INavigationService, NavigationService>();
@@ -142,7 +148,40 @@ public partial class App : Application
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();
         mainWindow.Show();
 
+        // Auto-connect MCP skills on startup (fire and forget)
+        _ = AutoConnectMCPSkillsAsync();
+
         base.OnStartup(e);
+    }
+
+    private async Task AutoConnectMCPSkillsAsync()
+    {
+        var debugService = _host.Services.GetRequiredService<IDebugService>();
+
+        try
+        {
+            debugService.Info("App", "Starting MCP skills auto-connect...");
+
+            // Small delay to let the UI load first
+            await Task.Delay(500);
+
+            var mcpViewModel = _host.Services.GetRequiredService<MCPViewModel>();
+            await mcpViewModel.LoadServersAsync();
+
+            debugService.Info("App", $"Loaded {mcpViewModel.Servers.Count} MCP skill(s)");
+
+            await mcpViewModel.AutoConnectSkillsAsync();
+
+            // Log connected tools
+            var mcpService = _host.Services.GetRequiredService<IMCPService>();
+            var tools = mcpService.GetAllAvailableTools();
+            debugService.Success("App", $"MCP auto-connect complete: {tools.Count} tool(s) available",
+                string.Join(", ", tools.Select(t => t.Tool.Name)));
+        }
+        catch (Exception ex)
+        {
+            debugService.Error("App", "Failed to auto-connect MCP skills", ex.Message);
+        }
     }
 
     protected override async void OnExit(ExitEventArgs e)

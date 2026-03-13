@@ -244,8 +244,18 @@ public partial class ChatViewModel : ObservableObject
         Messages.Add(new ChatMessageViewModel(userMessage));
         _debugService.Info("Chat", "User message added to chat history");
 
-        // Store user message in memory
-        _ = StoreMessageInMemoryAsync(userInput, MessageRole.User);
+        // Check if this is a tool-related query (real-time data)
+        var isToolRelated = IsToolRelatedQuery(userInput);
+
+        // Only store user message in memory if it's NOT a tool-related query
+        if (!isToolRelated)
+        {
+            _ = StoreMessageInMemoryAsync(userInput, MessageRole.User);
+        }
+        else
+        {
+            _debugService.Info("Memory", "Skipping memory storage - tool-related query");
+        }
 
         // Get AI response
         await GetAIResponseAsync();
@@ -278,59 +288,157 @@ public partial class ChatViewModel : ObservableObject
         _debugService.Info("MCP", $"Building tools prompt with {tools.Count} available tools");
 
         var sb = new StringBuilder();
-        sb.AppendLine("\n## Available Tools");
-        sb.AppendLine("You have access to the following tools. To use a tool, respond with a JSON block in this exact format:");
+        sb.AppendLine("\n## TOOLS");
+        sb.AppendLine("You have tools for real-time data. When user asks about current time, weather, etc., you MUST call a tool.");
+        sb.AppendLine();
+        sb.AppendLine("To call a tool, output ONLY this JSON block (nothing else before it):");
         sb.AppendLine("```tool_call");
-        sb.AppendLine("{\"tool\": \"tool_name\", \"arguments\": {\"arg1\": \"value1\"}}");
+        sb.AppendLine("{\"tool\": \"TOOL_NAME\", \"arguments\": {\"param\": \"value\"}}");
         sb.AppendLine("```");
-        sb.AppendLine("\nAfter the tool result is returned, provide a natural language response to the user.");
-        sb.AppendLine("\n### Tools:");
+        sb.AppendLine();
+        sb.AppendLine("Available tools:");
 
         foreach (var (server, tool) in tools)
         {
-            sb.AppendLine($"\n**{tool.Name}** (from {server.Name})");
-            sb.AppendLine($"  Description: {tool.Description}");
+            sb.AppendLine($"\n{tool.Name}: {tool.Description ?? "No description"}");
 
             if (tool.InputSchema?.Properties != null && tool.InputSchema.Properties.Count > 0)
             {
-                sb.AppendLine("  Parameters:");
                 var required = tool.InputSchema.Required ?? [];
+                sb.AppendLine("  Parameters:");
                 foreach (var prop in tool.InputSchema.Properties)
                 {
-                    var reqStr = required.Contains(prop.Key) ? " (required)" : "";
-                    var desc = !string.IsNullOrEmpty(prop.Value.Description)
-                        ? $" - {prop.Value.Description}"
-                        : "";
-                    sb.AppendLine($"    - {prop.Key}: {prop.Value.Type}{reqStr}{desc}");
+                    var req = required.Contains(prop.Key) ? " (required)" : "";
+                    sb.AppendLine($"    - {prop.Key}: {prop.Value.Type}{req}");
                 }
             }
         }
 
+        sb.AppendLine();
+        sb.AppendLine("Example: User asks 'what time is it in Tokyo?'");
+        sb.AppendLine("You respond with:");
+        sb.AppendLine("```tool_call");
+        sb.AppendLine("{\"tool\": \"get_current_time\", \"arguments\": {\"timezone\": \"Asia/Tokyo\"}}");
+        sb.AppendLine("```");
+
+        _debugService.Info("MCP", $"Tools prompt size: {sb.Length} chars");
         return sb.ToString();
+    }
+
+    private bool IsToolRelatedQuery(string query)
+    {
+        // Check if the query is asking for real-time information that should use tools
+        var toolKeywords = new[]
+        {
+            // Time queries
+            "current time", "what time", "time in", "time now", "what's the time",
+            "tell me the time", "give me the time", "show time",
+            // Weather queries
+            "current weather", "weather in", "temperature in", "how's the weather",
+            "what's the weather", "is it raining", "is it sunny",
+            // General real-time
+            "right now", "currently", "at the moment", "at present",
+            "today's date", "what date", "what day",
+            // Search queries
+            "search for", "look up", "find me", "google",
+            // File operations
+            "read file", "write file", "list files", "create file"
+        };
+
+        var lowerQuery = query.ToLowerInvariant();
+        var hasToolKeyword = toolKeywords.Any(keyword => lowerQuery.Contains(keyword));
+
+        if (hasToolKeyword)
+        {
+            _debugService.Info("Chat", "Tool-related query detected", $"Query: {query}");
+        }
+
+        return hasToolKeyword;
+    }
+
+    private bool ShouldStoreInMemory(string content, bool isToolRelated)
+    {
+        // Don't store tool-related responses in memory to avoid confusion
+        if (isToolRelated) return false;
+
+        // Don't store very short responses
+        if (content.Length < 20) return false;
+
+        // Don't store error messages
+        if (content.StartsWith("Error:")) return false;
+
+        return true;
+    }
+
+    private static string GetTimeAgo(DateTime dateTime)
+    {
+        var span = DateTime.UtcNow - dateTime;
+
+        if (span.TotalMinutes < 1) return "just now";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
+        if (span.TotalDays < 7) return $"{(int)span.TotalDays}d ago";
+        return dateTime.ToString("MMM d");
     }
 
     private (string? toolName, Dictionary<string, object>? arguments) ParseToolCall(string response)
     {
-        // Look for tool call pattern: ```tool_call\n{...}\n```
-        var match = Regex.Match(response, @"```tool_call\s*\n?\s*(\{[\s\S]*?\})\s*\n?```", RegexOptions.IgnoreCase);
-        if (!match.Success)
+        // Try multiple patterns - models output tool calls differently
+        var patterns = new[]
+        {
+            @"```tool_call\s*\n?\s*(\{[\s\S]*?\})\s*\n?```",  // Standard format
+            @"```json\s*\n?\s*(\{[\s\S]*?""tool""[\s\S]*?\})\s*\n?```",  // json block with tool
+            @"```\s*\n?\s*(\{[\s\S]*?""tool""[\s\S]*?\})\s*\n?```",  // plain code block
+            @"(\{[\s\S]*?""tool""\s*:\s*""[^""]+""[\s\S]*?\})"  // Raw JSON with tool key
+        };
+
+        string? jsonMatch = null;
+        foreach (var pattern in patterns)
+        {
+            var match = Regex.Match(response, pattern, RegexOptions.IgnoreCase);
+            if (match.Success)
+            {
+                jsonMatch = match.Groups[1].Value.Trim();
+                _debugService.Info("MCP", $"Found tool call with pattern", pattern);
+                break;
+            }
+        }
+
+        if (jsonMatch == null)
         {
             return (null, null);
         }
 
         try
         {
-            var json = match.Groups[1].Value;
-            using var doc = JsonDocument.Parse(json);
+            using var doc = JsonDocument.Parse(jsonMatch);
             var root = doc.RootElement;
 
-            var toolName = root.GetProperty("tool").GetString();
+            string? toolName = null;
+
+            // Try different property names for the tool
+            if (root.TryGetProperty("tool", out var toolProp))
+                toolName = toolProp.GetString();
+            else if (root.TryGetProperty("name", out var nameProp))
+                toolName = nameProp.GetString();
+            else if (root.TryGetProperty("function", out var funcProp))
+                toolName = funcProp.GetString();
+
+            if (string.IsNullOrEmpty(toolName))
+            {
+                _debugService.Warning("MCP", "Tool call JSON found but no tool name");
+                return (null, null);
+            }
+
             Dictionary<string, object>? arguments = null;
 
+            // Try different property names for arguments
             if (root.TryGetProperty("arguments", out var argsElement))
-            {
                 arguments = JsonSerializer.Deserialize<Dictionary<string, object>>(argsElement.GetRawText());
-            }
+            else if (root.TryGetProperty("args", out var args2Element))
+                arguments = JsonSerializer.Deserialize<Dictionary<string, object>>(args2Element.GetRawText());
+            else if (root.TryGetProperty("parameters", out var paramsElement))
+                arguments = JsonSerializer.Deserialize<Dictionary<string, object>>(paramsElement.GetRawText());
 
             _debugService.Info("MCP", $"Parsed tool call: {toolName}",
                 $"Arguments: {JsonSerializer.Serialize(arguments)}");
@@ -339,7 +447,7 @@ public partial class ChatViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            _debugService.Warning("MCP", $"Failed to parse tool call: {ex.Message}");
+            _debugService.Warning("MCP", $"Failed to parse tool call: {ex.Message}", jsonMatch);
             return (null, null);
         }
     }
@@ -430,19 +538,27 @@ public partial class ChatViewModel : ObservableObject
             _debugService.Info("LLM", $"Using model: {SelectedModel}",
                 $"Temperature: {settings.Temperature}, MaxTokens: {settings.MaxTokens}");
 
+            // ── Determine query type ────────────────────────────────────────
+            var lastUserMsg = Messages
+                .Where(m => m.Role == MessageRole.User && !m.IsStreaming)
+                .LastOrDefault()?.Content ?? string.Empty;
+
+            var isToolRelatedQuery = !string.IsNullOrEmpty(lastUserMsg) && IsToolRelatedQuery(lastUserMsg);
+            var hasAvailableTools = _mcpService.GetAllAvailableTools().Count > 0;
+
+            _debugService.Info("Chat", $"Query analysis",
+                $"IsToolRelated: {isToolRelatedQuery}, HasTools: {hasAvailableTools}");
+
             // ── Memory injection ────────────────────────────────────────────
             var memSettings = await _settingsService.GetMemorySettingsAsync();
             string memoryContext = string.Empty;
 
-            if (memSettings.IsEnabled && _memoryService.IsReady)
+            // Only search memory for NON-tool-related queries
+            // Tool queries should always use fresh tool calls, not cached memory
+            if (memSettings.IsEnabled && _memoryService.IsReady && !isToolRelatedQuery)
             {
                 _debugService.Info("Memory", "Memory enabled, searching for relevant context",
                     $"Provider: {memSettings.EmbeddingProvider}, Model: {memSettings.EmbeddingModel}\nCrossSession: {memSettings.CrossSessionMemory}, StoreGlobally: {memSettings.StoreGlobally}");
-
-                // Use the last user message as the search query
-                var lastUserMsg = Messages
-                    .Where(m => m.Role == MessageRole.User && !m.IsStreaming)
-                    .LastOrDefault()?.Content ?? string.Empty;
 
                 if (!string.IsNullOrEmpty(lastUserMsg))
                 {
@@ -462,17 +578,14 @@ public partial class ChatViewModel : ObservableObject
                         _debugService.Success("Memory", $"Injecting {memories.Count} memories into context");
 
                         var sb = new StringBuilder();
-                        sb.AppendLine("## IMPORTANT - Information from your memory (use this to answer the user's question):");
-                        sb.AppendLine("The following are facts and context from previous conversations that are relevant to the current question:");
+                        sb.AppendLine("## CONTEXT (Use this to answer)");
+                        sb.AppendLine("Answer ONLY based on this context. If the answer is not in the context, say you don't know.");
                         sb.AppendLine();
                         foreach (var mem in memories)
                         {
-                            var roleName = mem.Entry.Role == MessageRole.User ? "User said" : "You (Assistant) said";
-                            sb.AppendLine($"- {roleName}: \"{mem.Entry.Content}\"");
+                            var roleName = mem.Entry.Role == MessageRole.User ? "Q" : "A";
+                            sb.AppendLine($"{roleName}: {mem.Entry.Content}");
                         }
-                        sb.AppendLine();
-                        sb.AppendLine("Use the above information to answer the user's current question. If they ask about something mentioned in your memory, refer to it directly.");
-                        sb.AppendLine();
                         memoryContext = sb.ToString();
                     }
                     else
@@ -481,24 +594,35 @@ public partial class ChatViewModel : ObservableObject
                     }
                 }
             }
+            else if (isToolRelatedQuery)
+            {
+                _debugService.Info("Memory", "Skipping memory search - this is a tool-related query (real-time data needed)");
+            }
             else
             {
                 _debugService.Info("Memory", "Memory disabled or not ready, skipping");
             }
 
-            // Inject memory context into system prompt if available
+            // Build effective system prompt
             var effectiveSystemPrompt = settings.SystemPrompt;
-            if (!string.IsNullOrEmpty(memoryContext))
-            {
-                effectiveSystemPrompt = string.IsNullOrEmpty(effectiveSystemPrompt)
-                    ? memoryContext
-                    : effectiveSystemPrompt + "\n\n" + memoryContext;
-                _debugService.Info("LLM", "System prompt augmented with memory context");
-            }
 
             // ── MCP Tools injection ────────────────────────────────────────
             var mcpToolsPrompt = BuildMCPToolsPrompt();
-            if (!string.IsNullOrEmpty(mcpToolsPrompt))
+
+            // Warn if tool-related query but no tools available
+            if (isToolRelatedQuery && string.IsNullOrEmpty(mcpToolsPrompt))
+            {
+                _debugService.Warning("MCP", "Tool-related query detected but NO MCP tools are connected!",
+                    "Go to Skills page and connect your MCP servers");
+            }
+
+            // For tool-related queries, put tools FIRST so the model sees them
+            if (isToolRelatedQuery && !string.IsNullOrEmpty(mcpToolsPrompt))
+            {
+                effectiveSystemPrompt = mcpToolsPrompt + "\n\n" + (effectiveSystemPrompt ?? "");
+                _debugService.Info("LLM", "Tool-related query: Tools placed at START of system prompt");
+            }
+            else if (!string.IsNullOrEmpty(mcpToolsPrompt))
             {
                 effectiveSystemPrompt = string.IsNullOrEmpty(effectiveSystemPrompt)
                     ? mcpToolsPrompt
@@ -506,6 +630,15 @@ public partial class ChatViewModel : ObservableObject
                 _debugService.Info("LLM", "System prompt augmented with MCP tools");
             }
             // ───────────────────────────────────────────────────────────────
+
+            // Inject memory context (only for non-tool queries, already filtered above)
+            if (!string.IsNullOrEmpty(memoryContext))
+            {
+                effectiveSystemPrompt = string.IsNullOrEmpty(effectiveSystemPrompt)
+                    ? memoryContext
+                    : effectiveSystemPrompt + "\n\n" + memoryContext;
+                _debugService.Info("LLM", "System prompt augmented with memory context");
+            }
 
             settings.SystemPrompt = effectiveSystemPrompt;
             // ───────────────────────────────────────────────────────────────
@@ -520,13 +653,25 @@ public partial class ChatViewModel : ObservableObject
                 .SkipLast(1) // Skip the empty assistant message
                 .ToList();
 
-            _debugService.Info("LLM", $"Sending request with {chatMessages.Count} messages");
+            _debugService.Info("LLM", $"Sending request with {chatMessages.Count} messages",
+                $"System prompt: {effectiveSystemPrompt?.Length ?? 0} chars");
+
+            // Verify Ollama is reachable before sending
+            if (SelectedProvider == LLMProviderType.Ollama)
+            {
+                StatusMessage = "Connecting to Ollama...";
+                var isConnected = await service.ValidateConnectionAsync(_streamingCts.Token);
+                if (!isConnected)
+                {
+                    throw new InvalidOperationException("Cannot connect to Ollama. Make sure Ollama is running (ollama serve).");
+                }
+            }
 
             var responseBuilder = new StringBuilder();
             var tokenCount = 0;
             var startTime = DateTime.Now;
 
-            StatusMessage = "Generating response...";
+            StatusMessage = $"Waiting for {SelectedModel}...";
 
             _debugService.Info("LLM", "Starting streaming response...");
 
@@ -534,10 +679,17 @@ public partial class ChatViewModel : ObservableObject
             {
                 responseBuilder.Append(chunk);
                 tokenCount++;
+
+                // Update status to show progress
+                if (tokenCount == 1)
+                {
+                    StatusMessage = "Generating response...";
+                }
+
                 var currentContent = responseBuilder.ToString();
 
-                // Update on UI thread
-                Application.Current.Dispatcher.Invoke(() =>
+                // Update on UI thread - use BeginInvoke to avoid blocking the async stream
+                Application.Current.Dispatcher.BeginInvoke(() =>
                 {
                     messageVm.Content = currentContent;
                 });
@@ -589,7 +741,7 @@ public partial class ChatViewModel : ObservableObject
                 {
                     followUpBuilder.Append(chunk);
                     var currentContent = followUpBuilder.ToString();
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.BeginInvoke(() =>
                     {
                         messageVm.Content = currentContent;
                     });
@@ -613,9 +765,16 @@ public partial class ChatViewModel : ObservableObject
             await _chatRepository.AddMessageAsync(assistantMessage);
             StatusMessage = IsMemoryEnabled ? $"Ready · {MemoryCount} memories" : "Ready";
 
-            // Store assistant response in memory
-            _debugService.Info("Memory", "Storing assistant response in memory");
-            _ = StoreMessageInMemoryAsync(assistantMessage.Content, MessageRole.Assistant);
+            // Store assistant response in memory ONLY if it's not a tool-related response
+            if (!isToolRelatedQuery && ShouldStoreInMemory(assistantMessage.Content, isToolRelatedQuery))
+            {
+                _debugService.Info("Memory", "Storing assistant response in memory");
+                _ = StoreMessageInMemoryAsync(assistantMessage.Content, MessageRole.Assistant);
+            }
+            else
+            {
+                _debugService.Info("Memory", "Skipping memory storage - tool-related or not suitable");
+            }
         }
         catch (OperationCanceledException)
         {
@@ -664,6 +823,15 @@ public partial class ChatViewModel : ObservableObject
         await _memoryService.ClearMemoriesAsync(CurrentSession.Id);
         await RefreshMemoryStatusAsync();
         StatusMessage = "Session memory cleared";
+    }
+
+    [RelayCommand]
+    private async Task ClearAllMemories()
+    {
+        await _memoryService.ClearAllMemoriesAsync();
+        await RefreshMemoryStatusAsync();
+        StatusMessage = "All memories cleared";
+        _debugService.Info("Memory", "All memories cleared by user");
     }
 }
 

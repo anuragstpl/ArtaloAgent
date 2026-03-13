@@ -19,6 +19,7 @@ public class MCPClientService : IMCPService, IDisposable
     private readonly IDebugService? _debugService;
     private readonly ConcurrentDictionary<int, MCPServerConnection> _connections = new();
     private readonly ConcurrentDictionary<int, MCPServerState> _states = new();
+    private readonly ConcurrentDictionary<int, MCPServerConfig> _configCache = new();
     private int _requestId = 0;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -98,6 +99,9 @@ public class MCPClientService : IMCPService, IDisposable
             throw new InvalidOperationException($"Server {serverId} not found");
         }
 
+        // Cache the config for synchronous access later
+        _configCache[serverId] = config;
+
         // Update state to connecting
         var state = new MCPServerState
         {
@@ -164,12 +168,18 @@ public class MCPClientService : IMCPService, IDisposable
             _debugService?.Info("MCP", $"Disconnected from server {serverId}");
         }
 
+        // Keep the config in cache for potential reconnection
+        // _configCache.TryRemove(serverId, out _);
+
         if (_states.TryGetValue(serverId, out var state))
         {
             state.Status = MCPServerStatus.Disconnected;
             state.ErrorMessage = null;
+            state.Tools.Clear();
             ServerStateChanged?.Invoke(this, state);
         }
+
+        await Task.CompletedTask; // Satisfy async signature
     }
 
     public MCPServerState? GetServerState(int serverId)
@@ -190,8 +200,9 @@ public class MCPClientService : IMCPService, IDisposable
         {
             if (state.Status != MCPServerStatus.Connected) continue;
 
-            var config = GetServerAsync(state.ConfigId).GetAwaiter().GetResult();
-            if (config == null) continue;
+            // Use cached config to avoid async deadlock
+            if (!_configCache.TryGetValue(state.ConfigId, out var config) || config == null)
+                continue;
 
             foreach (var tool in state.Tools)
             {
@@ -301,8 +312,38 @@ public class MCPClientService : IMCPService, IDisposable
         MCPServerConfig config,
         CancellationToken cancellationToken)
     {
-        var arguments = JsonSerializer.Deserialize<List<string>>(config.Arguments) ?? [];
-        var envVars = JsonSerializer.Deserialize<Dictionary<string, string>>(config.EnvironmentVariables) ?? [];
+        // Safely parse arguments - handle null, empty, or invalid JSON
+        List<string> arguments = [];
+        if (!string.IsNullOrWhiteSpace(config.Arguments))
+        {
+            try
+            {
+                arguments = JsonSerializer.Deserialize<List<string>>(config.Arguments) ?? [];
+            }
+            catch (JsonException ex)
+            {
+                _debugService?.Warning("MCP", $"Invalid arguments JSON: {ex.Message}", config.Arguments);
+            }
+        }
+
+        // Safely parse environment variables
+        Dictionary<string, string> envVars = [];
+        if (!string.IsNullOrWhiteSpace(config.EnvironmentVariables))
+        {
+            try
+            {
+                envVars = JsonSerializer.Deserialize<Dictionary<string, string>>(config.EnvironmentVariables) ?? [];
+            }
+            catch (JsonException ex)
+            {
+                _debugService?.Warning("MCP", $"Invalid environment variables JSON: {ex.Message}", config.EnvironmentVariables);
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(config.Command))
+        {
+            throw new InvalidOperationException("Server command is not configured");
+        }
 
         var startInfo = new ProcessStartInfo
         {
@@ -320,30 +361,45 @@ public class MCPClientService : IMCPService, IDisposable
 
         foreach (var (key, value) in envVars)
         {
-            startInfo.EnvironmentVariables[key] = value;
+            if (!string.IsNullOrEmpty(key))
+            {
+                startInfo.EnvironmentVariables[key] = value ?? string.Empty;
+            }
         }
 
+        _debugService?.Info("MCP", $"Starting process: {config.Command}",
+            $"Arguments: {startInfo.Arguments}\nWorkingDir: {startInfo.WorkingDirectory}");
+
         var process = new Process { StartInfo = startInfo };
+        var stderrBuilder = new StringBuilder();
 
         // Start error logging
         process.ErrorDataReceived += (_, e) =>
         {
             if (!string.IsNullOrEmpty(e.Data))
             {
+                stderrBuilder.AppendLine(e.Data);
                 _debugService?.Warning("MCP", $"Server stderr: {e.Data}");
             }
         };
 
-        process.Start();
-        process.BeginErrorReadLine();
+        try
+        {
+            process.Start();
+            process.BeginErrorReadLine();
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to start process '{config.Command}': {ex.Message}", ex);
+        }
 
         // Give the process a moment to start
-        await Task.Delay(100, cancellationToken);
+        await Task.Delay(500, cancellationToken);
 
         if (process.HasExited)
         {
-            var error = await process.StandardError.ReadToEndAsync(cancellationToken);
-            throw new InvalidOperationException($"Process exited immediately: {error}");
+            var error = stderrBuilder.ToString();
+            throw new InvalidOperationException($"Process exited immediately with code {process.ExitCode}: {error}");
         }
 
         return new MCPServerConnection
@@ -394,23 +450,56 @@ public class MCPClientService : IMCPService, IDisposable
         JsonRpcRequest request,
         CancellationToken cancellationToken)
     {
+        if (connection?.Input == null || connection?.Output == null)
+        {
+            throw new InvalidOperationException("Connection streams are not available");
+        }
+
         var json = JsonSerializer.Serialize(request, JsonOptions);
 
         _debugService?.Info("MCP", $"Sending: {request.Method}", json);
 
-        await connection.Input.WriteLineAsync(json);
-        await connection.Input.FlushAsync();
+        try
+        {
+            await connection.Input.WriteLineAsync(json);
+            await connection.Input.FlushAsync();
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to send request: {ex.Message}", ex);
+        }
 
-        // Read response
-        var responseLine = await connection.Output.ReadLineAsync(cancellationToken);
+        // Read response with timeout
+        string? responseLine;
+        try
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(TimeSpan.FromSeconds(30)); // 30 second timeout
+
+            responseLine = await connection.Output.ReadLineAsync(cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            throw new InvalidOperationException("MCP server did not respond within timeout");
+        }
+
         if (string.IsNullOrEmpty(responseLine))
         {
             throw new InvalidOperationException("Empty response from MCP server");
         }
 
-        _debugService?.Info("MCP", "Received response", responseLine.Substring(0, Math.Min(500, responseLine.Length)));
+        _debugService?.Info("MCP", "Received response", responseLine.Length > 500 ? responseLine[..500] : responseLine);
 
-        var response = JsonSerializer.Deserialize<JsonRpcResponse>(responseLine, JsonOptions);
+        JsonRpcResponse? response;
+        try
+        {
+            response = JsonSerializer.Deserialize<JsonRpcResponse>(responseLine, JsonOptions);
+        }
+        catch (JsonException ex)
+        {
+            _debugService?.Error("MCP", $"Failed to parse response: {ex.Message}", responseLine);
+            throw new InvalidOperationException($"Invalid JSON response from MCP server: {ex.Message}");
+        }
 
         if (response?.Error != null)
         {
@@ -423,8 +512,16 @@ public class MCPClientService : IMCPService, IDisposable
         }
 
         // Deserialize result to target type
-        var resultJson = JsonSerializer.Serialize(response.Result, JsonOptions);
-        return JsonSerializer.Deserialize<T>(resultJson, JsonOptions);
+        try
+        {
+            var resultJson = JsonSerializer.Serialize(response.Result, JsonOptions);
+            return JsonSerializer.Deserialize<T>(resultJson, JsonOptions);
+        }
+        catch (JsonException ex)
+        {
+            _debugService?.Error("MCP", $"Failed to deserialize result: {ex.Message}");
+            return default;
+        }
     }
 
     private async Task SendNotificationAsync(

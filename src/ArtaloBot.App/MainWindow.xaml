@@ -109,7 +109,7 @@
                             <materialDesign:PackIcon Kind="Puzzle" Width="20" Height="20"
                                                      Foreground="{StaticResource TextSecondaryBrush}"
                                                      Margin="0,0,12,0" VerticalAlignment="Center" />
-                            <TextBlock Text="MCP Servers" FontSize="14" VerticalAlignment="Center" />
+                            <TextBlock Text="Skills" FontSize="14" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
 

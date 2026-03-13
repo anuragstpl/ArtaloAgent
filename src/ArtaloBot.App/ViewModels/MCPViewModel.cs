@@ -31,6 +31,25 @@ public partial class MCPViewModel : ObservableObject
     [ObservableProperty]
     private MCPServerViewModel? _editingServer;
 
+    // Preset selection
+    [ObservableProperty]
+    private bool _isSelectingPreset;
+
+    [ObservableProperty]
+    private ObservableCollection<SkillPreset> _availablePresets = [];
+
+    [ObservableProperty]
+    private ObservableCollection<string> _presetCategories = [];
+
+    [ObservableProperty]
+    private string? _selectedCategory;
+
+    [ObservableProperty]
+    private SkillPreset? _selectedPreset;
+
+    [ObservableProperty]
+    private ObservableCollection<EnvVarInputViewModel> _envVarInputs = [];
+
     public MCPViewModel(IMCPService mcpService, IDebugService debugService)
     {
         _mcpService = mcpService;
@@ -38,6 +57,54 @@ public partial class MCPViewModel : ObservableObject
 
         // Subscribe to state changes
         _mcpService.ServerStateChanged += OnServerStateChanged;
+
+        // Load preset categories
+        LoadPresets();
+    }
+
+    private void LoadPresets()
+    {
+        var categories = SkillPresetRegistry.GetCategories();
+        PresetCategories.Clear();
+        PresetCategories.Add("All");
+        foreach (var cat in categories)
+        {
+            PresetCategories.Add(cat);
+        }
+        SelectedCategory = "All";
+        FilterPresets();
+    }
+
+    partial void OnSelectedCategoryChanged(string? value)
+    {
+        FilterPresets();
+    }
+
+    private void FilterPresets()
+    {
+        var allPresets = SkillPresetRegistry.GetAllPresets();
+        AvailablePresets.Clear();
+
+        var filtered = SelectedCategory == "All"
+            ? allPresets
+            : allPresets.Where(p => p.Category == SelectedCategory);
+
+        foreach (var preset in filtered.OrderBy(p => p.Name))
+        {
+            AvailablePresets.Add(preset);
+        }
+    }
+
+    partial void OnSelectedPresetChanged(SkillPreset? value)
+    {
+        EnvVarInputs.Clear();
+        if (value != null)
+        {
+            foreach (var envVar in value.RequiredEnvVars)
+            {
+                EnvVarInputs.Add(new EnvVarInputViewModel(envVar));
+            }
+        }
     }
 
     public async Task LoadServersAsync()
@@ -55,11 +122,11 @@ public partial class MCPViewModel : ObservableObject
                 Servers.Add(vm);
             }
 
-            StatusMessage = $"Loaded {Servers.Count} MCP server(s)";
+            StatusMessage = $"Loaded {Servers.Count} skill(s)";
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Error loading servers: {ex.Message}";
+            StatusMessage = $"Error loading skills: {ex.Message}";
             _debugService.Error("MCP", "Failed to load servers", ex.Message);
         }
         finally
@@ -83,14 +150,71 @@ public partial class MCPViewModel : ObservableObject
     [RelayCommand]
     private void StartAddNew()
     {
+        // Show preset selection dialog
+        SelectedPreset = null;
+        EnvVarInputs.Clear();
+        IsSelectingPreset = true;
+    }
+
+    [RelayCommand]
+    private void StartAddCustom()
+    {
+        // Close preset dialog and open manual config
+        IsSelectingPreset = false;
         EditingServer = new MCPServerViewModel(new MCPServerConfig
         {
-            Name = "New MCP Server",
+            Name = "New Skill",
             ServerType = "stdio",
-            Command = "npx",
+            Command = "npx.cmd",
             Arguments = "[]",
             EnvironmentVariables = "{}"
         }, null);
+        IsAddingNew = true;
+    }
+
+    [RelayCommand]
+    private void CancelPresetSelection()
+    {
+        IsSelectingPreset = false;
+        SelectedPreset = null;
+        EnvVarInputs.Clear();
+    }
+
+    [RelayCommand]
+    private void SelectPreset(SkillPreset preset)
+    {
+        SelectedPreset = preset;
+    }
+
+    [RelayCommand]
+    private void ApplyPreset()
+    {
+        if (SelectedPreset == null) return;
+
+        // Build environment variables JSON from inputs
+        var envVars = new Dictionary<string, string>();
+        foreach (var input in EnvVarInputs)
+        {
+            if (!string.IsNullOrWhiteSpace(input.Value))
+            {
+                envVars[input.Key] = input.Value;
+            }
+        }
+
+        var config = new MCPServerConfig
+        {
+            Name = SelectedPreset.Name,
+            Description = SelectedPreset.Description,
+            ServerType = "stdio",
+            Command = SelectedPreset.Command,
+            Arguments = SelectedPreset.Arguments,
+            WorkingDirectory = SelectedPreset.WorkingDirectory,
+            EnvironmentVariables = JsonSerializer.Serialize(envVars),
+            IsEnabled = true
+        };
+
+        EditingServer = new MCPServerViewModel(config, null);
+        IsSelectingPreset = false;
         IsAddingNew = true;
     }
 
@@ -137,7 +261,7 @@ public partial class MCPViewModel : ObservableObject
                 var newConfig = await _mcpService.AddServerAsync(EditingServer.Config);
                 EditingServer.Config.Id = newConfig.Id;
                 Servers.Add(EditingServer);
-                StatusMessage = $"Added server: {EditingServer.Name}";
+                StatusMessage = $"Added skill: {EditingServer.Name}";
             }
             else
             {
@@ -151,7 +275,7 @@ public partial class MCPViewModel : ObservableObject
                     Servers[index] = EditingServer;
                 }
 
-                StatusMessage = $"Updated server: {EditingServer.Name}";
+                StatusMessage = $"Updated skill: {EditingServer.Name}";
             }
 
             EditingServer = null;
@@ -159,7 +283,7 @@ public partial class MCPViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Error saving server: {ex.Message}";
+            StatusMessage = $"Error saving skill: {ex.Message}";
             _debugService.Error("MCP", "Failed to save server", ex.Message);
         }
         finally
@@ -175,7 +299,7 @@ public partial class MCPViewModel : ObservableObject
         {
             await _mcpService.DeleteServerAsync(server.Config.Id);
             Servers.Remove(server);
-            StatusMessage = $"Deleted server: {server.Name}";
+            StatusMessage = $"Deleted skill: {server.Name}";
 
             if (SelectedServer == server)
             {
@@ -184,13 +308,15 @@ public partial class MCPViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Error deleting server: {ex.Message}";
+            StatusMessage = $"Error deleting skill: {ex.Message}";
         }
     }
 
     [RelayCommand]
     private async Task Connect(MCPServerViewModel server)
     {
+        if (server == null) return;
+
         try
         {
             server.IsConnecting = true;
@@ -199,16 +325,70 @@ public partial class MCPViewModel : ObservableObject
             var state = await _mcpService.ConnectAsync(server.Config.Id);
             server.UpdateState(state);
 
-            StatusMessage = $"Connected to {server.Name} - {state.Tools.Count} tools available";
+            // Auto-enable AutoStart when successfully connected
+            if (state?.Status == MCPServerStatus.Connected && !server.Config.AutoStart)
+            {
+                server.Config.AutoStart = true;
+                await _mcpService.UpdateServerAsync(server.Config);
+                _debugService.Info("MCP", $"Enabled auto-start for {server.Name}");
+            }
+
+            var toolCount = state?.Tools?.Count ?? 0;
+            StatusMessage = $"Connected to {server.Name} - {toolCount} tools available";
         }
         catch (Exception ex)
         {
             StatusMessage = $"Failed to connect: {ex.Message}";
+            _debugService.Error("MCP", $"Connection failed: {ex.Message}", ex.StackTrace ?? "");
         }
         finally
         {
             server.IsConnecting = false;
         }
+    }
+
+    /// <summary>
+    /// Auto-connect all skills that have AutoStart enabled.
+    /// Called on app startup.
+    /// </summary>
+    public async Task AutoConnectSkillsAsync()
+    {
+        var autoStartServers = Servers.Where(s => s.Config.AutoStart && s.Config.IsEnabled).ToList();
+
+        if (autoStartServers.Count == 0)
+        {
+            _debugService.Info("MCP", "No skills configured for auto-start");
+            return;
+        }
+
+        _debugService.Info("MCP", $"Auto-connecting {autoStartServers.Count} skill(s)...");
+
+        foreach (var server in autoStartServers)
+        {
+            try
+            {
+                server.IsConnecting = true;
+                StatusMessage = $"Auto-connecting to {server.Name}...";
+
+                var state = await _mcpService.ConnectAsync(server.Config.Id);
+                server.UpdateState(state);
+
+                var toolCount = state?.Tools?.Count ?? 0;
+                _debugService.Success("MCP", $"Auto-connected to {server.Name} - {toolCount} tools");
+            }
+            catch (Exception ex)
+            {
+                _debugService.Error("MCP", $"Auto-connect failed for {server.Name}: {ex.Message}");
+                // Don't throw - continue with other servers
+            }
+            finally
+            {
+                server.IsConnecting = false;
+            }
+        }
+
+        var connectedCount = Servers.Count(s => s.IsConnected);
+        StatusMessage = $"{connectedCount} skill(s) connected";
     }
 
     [RelayCommand]
@@ -380,12 +560,12 @@ public partial class MCPToolViewModel : ObservableObject
 
     public MCPToolViewModel(MCPTool tool)
     {
-        Tool = tool;
+        Tool = tool ?? throw new ArgumentNullException(nameof(tool));
         GenerateDefaultTestArgs();
     }
 
-    public string Name => Tool.Name;
-    public string Description => Tool.Description;
+    public string Name => Tool.Name ?? "Unknown";
+    public string Description => Tool.Description ?? "";
 
     public string InputSchemaDescription
     {
@@ -430,5 +610,26 @@ public partial class MCPToolViewModel : ObservableObject
         }
 
         TestArguments = JsonSerializer.Serialize(args, new JsonSerializerOptions { WriteIndented = true });
+    }
+}
+
+public partial class EnvVarInputViewModel : ObservableObject
+{
+    public string Key { get; }
+    public string DisplayName { get; }
+    public string Description { get; }
+    public string Placeholder { get; }
+    public bool IsSecret { get; }
+
+    [ObservableProperty]
+    private string _value = string.Empty;
+
+    public EnvVarInputViewModel(SkillPresetEnvVar envVar)
+    {
+        Key = envVar.Key;
+        DisplayName = envVar.DisplayName;
+        Description = envVar.Description;
+        Placeholder = envVar.Placeholder;
+        IsSecret = envVar.IsSecret;
     }
 }

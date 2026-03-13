@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ArtaloBot.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+35be4b3c649a6bcfb1578f168a7ee21deab429a5")]
 [assembly: System.Reflection.AssemblyProductAttribute("ArtaloBot.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ArtaloBot.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

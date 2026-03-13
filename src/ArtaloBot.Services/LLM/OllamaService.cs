@@ -71,12 +71,14 @@ public class OllamaService : ILLMService
             Options = new OllamaOptions
             {
                 Temperature = settings.Temperature,
-                NumPredict = settings.MaxTokens,
+                NumPredict = settings.MaxTokens > 0 ? settings.MaxTokens : 512, // Default to 512 for fast responses
                 TopP = settings.TopP
             }
         };
 
         var json = JsonSerializer.Serialize(request, JsonOptions);
+        _debugService?.Info("Ollama", "Sending streaming request", $"Model: {settings.Model}, Prompt length: {json.Length} chars");
+
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}/api/chat")
@@ -84,25 +86,67 @@ public class OllamaService : ILLMService
             Content = content
         };
 
-        using var response = await _httpClient.SendAsync(
-            httpRequest,
-            HttpCompletionOption.ResponseHeadersRead,
-            cancellationToken);
-
-        response.EnsureSuccessStatusCode();
-
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var reader = new StreamReader(stream);
-
-        while (!reader.EndOfStream && !cancellationToken.IsCancellationRequested)
+        HttpResponseMessage response;
+        try
         {
-            var line = await reader.ReadLineAsync(cancellationToken);
-            if (string.IsNullOrEmpty(line)) continue;
+            response = await _httpClient.SendAsync(
+                httpRequest,
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken);
+        }
+        catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
+        {
+            _debugService?.Error("Ollama", "Request timed out - Ollama may be overloaded or the model is too slow");
+            throw new InvalidOperationException("Ollama request timed out. Try using a smaller/faster model like qwen2.5:3b or phi3:mini", ex);
+        }
+        catch (HttpRequestException ex)
+        {
+            _debugService?.Error("Ollama", $"Connection error: {ex.Message}");
+            throw new InvalidOperationException($"Cannot connect to Ollama at {_baseUrl}. Make sure Ollama is running.", ex);
+        }
 
-            var chunk = JsonSerializer.Deserialize<OllamaChatResponse>(line, JsonOptions);
-            if (!string.IsNullOrEmpty(chunk?.Message?.Content))
+        using (response)
+        {
+            if (!response.IsSuccessStatusCode)
             {
-                yield return chunk.Message.Content;
+                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                _debugService?.Error("Ollama", $"HTTP {(int)response.StatusCode}: {errorContent}");
+                throw new InvalidOperationException($"Ollama error: {response.StatusCode} - {errorContent}");
+            }
+
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var reader = new StreamReader(stream);
+
+            _debugService?.Info("Ollama", "Streaming response started...");
+            var chunkCount = 0;
+
+            while (!reader.EndOfStream && !cancellationToken.IsCancellationRequested)
+            {
+                var line = await reader.ReadLineAsync(cancellationToken);
+                if (string.IsNullOrEmpty(line)) continue;
+
+                OllamaChatResponse? chunk;
+                try
+                {
+                    chunk = JsonSerializer.Deserialize<OllamaChatResponse>(line, JsonOptions);
+                }
+                catch (JsonException ex)
+                {
+                    _debugService?.Warning("Ollama", $"Failed to parse chunk: {ex.Message}", line);
+                    continue;
+                }
+
+                if (!string.IsNullOrEmpty(chunk?.Message?.Content))
+                {
+                    chunkCount++;
+                    yield return chunk.Message.Content;
+                }
+
+                if (chunk?.Done == true)
+                {
+                    _debugService?.Success("Ollama", $"Streaming complete", $"Total chunks: {chunkCount}");
+                    break;
+                }
             }
         }
     }

@@ -15,3 +15,4 @@ D:\Projects\ArtaloBot\src\ArtaloBot.Services\obj\Debug\net8.0\ArtaloBot.Services
 D:\Projects\ArtaloBot\src\ArtaloBot.Services\obj\Debug\net8.0\ref\ArtaloBot.Services.dll
 D:\Projects\ArtaloBot\src\ArtaloBot.Services\bin\Debug\net8.0\ArtaloBot.Data.dll
 D:\Projects\ArtaloBot\src\ArtaloBot.Services\bin\Debug\net8.0\ArtaloBot.Data.pdb
+D:\Projects\ArtaloBot\src\ArtaloBot.Services\obj\Debug\net8.0\ArtaloBot.Services.sourcelink.json
