@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:ArtaloBot.App.Converters"
+             xmlns:markdig="clr-namespace:Markdig.Wpf;assembly=Markdig.Wpf"
              mc:Ignorable="d"
              d:DesignHeight="650" d:DesignWidth="800"
              Background="{StaticResource BackgroundBrush}">
@@ -12,6 +13,38 @@
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVis" />
         <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis" />
+
+        <!-- Markdown Viewer Style -->
+        <Style TargetType="FlowDocument" x:Key="MarkdownDocument">
+            <Setter Property="FontFamily" Value="Segoe UI" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+            <Setter Property="PagePadding" Value="0" />
+        </Style>
+
+        <!-- Markdown Heading Styles -->
+        <Style TargetType="Paragraph" x:Key="Heading1Style">
+            <Setter Property="FontSize" Value="24" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Margin" Value="0,8,0,8" />
+        </Style>
+        <Style TargetType="Paragraph" x:Key="Heading2Style">
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,6,0,6" />
+        </Style>
+        <Style TargetType="Paragraph" x:Key="Heading3Style">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,4,0,4" />
+        </Style>
+
+        <!-- Code Block Style -->
+        <Style TargetType="Section" x:Key="CodeBlockStyle">
+            <Setter Property="Background" Value="#1E1E1E" />
+            <Setter Property="Padding" Value="12" />
+            <Setter Property="Margin" Value="0,8,0,8" />
+        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -28,6 +61,10 @@
                 BorderThickness="0,0,0,1"
                 Padding="20,12">
             <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
@@ -36,7 +73,7 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- Title -->
-                <TextBlock Grid.Column="0"
+                <TextBlock Grid.Row="0" Grid.Column="0"
                            Text="Chat"
                            FontSize="20"
                            FontWeight="SemiBold"
@@ -44,7 +81,7 @@
                            VerticalAlignment="Center" />
 
                 <!-- Provider Selector -->
-                <ComboBox Grid.Column="1"
+                <ComboBox Grid.Row="0" Grid.Column="1"
                           ItemsSource="{Binding AvailableProviders}"
                           SelectedItem="{Binding SelectedProvider}"
                           MinWidth="120"
@@ -55,7 +92,7 @@
                           VerticalContentAlignment="Center" />
 
                 <!-- Model Selector -->
-                <ComboBox Grid.Column="2"
+                <ComboBox Grid.Row="0" Grid.Column="2"
                           ItemsSource="{Binding AvailableModels}"
                           SelectedItem="{Binding SelectedModel}"
                           MinWidth="160"
@@ -66,13 +103,85 @@
                           VerticalContentAlignment="Center" />
 
                 <!-- Clear Button -->
-                <Button Grid.Column="3"
+                <Button Grid.Row="0" Grid.Column="3"
                         Style="{StaticResource Win11IconButton}"
                         ToolTip="Clear Chat"
                         Command="{Binding ClearChatCommand}">
                     <materialDesign:PackIcon Kind="Broom" Width="20" Height="20"
                                              Foreground="{StaticResource TextSecondaryBrush}" />
                 </Button>
+
+                <!-- Agent Knowledge Selector (Second Row) -->
+                <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4"
+                            Orientation="Horizontal"
+                            Margin="0,10,0,0">
+
+                    <!-- Agent Icon -->
+                    <materialDesign:PackIcon Kind="Robot"
+                                             Width="20" Height="20"
+                                             Foreground="{StaticResource AccentBrush}"
+                                             VerticalAlignment="Center"
+                                             Margin="0,0,8,0" />
+
+                    <!-- Agent Label -->
+                    <TextBlock Text="Knowledge Source:"
+                               FontSize="13"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,12,0" />
+
+                    <!-- Agent Selector -->
+                    <ComboBox ItemsSource="{Binding AvailableAgents}"
+                              SelectedItem="{Binding SelectedAgent}"
+                              MinWidth="180"
+                              Height="32"
+                              Padding="10,0"
+                              FontSize="13"
+                              VerticalContentAlignment="Center"
+                              materialDesign:HintAssist.Hint="None (General Chat)">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Robot"
+                                                             Width="16" Height="16"
+                                                             Margin="0,0,8,0"
+                                                             VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <!-- Clear Agent Selection -->
+                    <Button Style="{StaticResource Win11IconButton}"
+                            ToolTip="Clear agent selection"
+                            Command="{Binding ClearAgentCommand}"
+                            Visibility="{Binding UseAgentKnowledge, Converter={StaticResource BoolToVis}}"
+                            Margin="4,0,0,0"
+                            Height="32" Width="32">
+                        <materialDesign:PackIcon Kind="Close" Width="16" Height="16"
+                                                 Foreground="{StaticResource TextSecondaryBrush}" />
+                    </Button>
+
+                    <!-- Agent Status Indicator -->
+                    <Border Visibility="{Binding UseAgentKnowledge, Converter={StaticResource BoolToVis}}"
+                            Background="{StaticResource AccentLightBrush}"
+                            CornerRadius="4"
+                            Padding="8,4"
+                            Margin="12,0,0,0"
+                            VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Database"
+                                                     Width="14" Height="14"
+                                                     Foreground="{StaticResource AccentBrush}"
+                                                     Margin="0,0,6,0" />
+                            <TextBlock Text="Knowledge Active"
+                                       FontSize="11"
+                                       FontWeight="SemiBold"
+                                       Foreground="{StaticResource AccentBrush}" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
             </Grid>
         </Border>
 
@@ -90,9 +199,16 @@
                             <!-- User Message -->
                             <Border Style="{StaticResource UserMessageBubble}"
                                     Visibility="{Binding IsUser, Converter={StaticResource BoolToVis}}">
-                                <TextBlock Text="{Binding Content}"
-                                           Style="{StaticResource MessageText}"
-                                           Foreground="White" />
+                                <TextBox Text="{Binding Content, Mode=OneWay}"
+                                         IsReadOnly="True"
+                                         BorderThickness="0"
+                                         Background="Transparent"
+                                         Foreground="White"
+                                         TextWrapping="Wrap"
+                                         FontSize="14"
+                                         Padding="0"
+                                         Cursor="IBeam"
+                                         ContextMenu="{x:Null}" />
                             </Border>
 
                             <!-- Assistant Message -->
@@ -119,11 +235,28 @@
                                                    VerticalAlignment="Center" />
                                     </StackPanel>
 
-                                    <!-- Message Content -->
-                                    <TextBlock Grid.Row="1"
-                                               Text="{Binding Content}"
-                                               Style="{StaticResource MessageText}"
-                                               Foreground="{StaticResource TextPrimaryBrush}" />
+                                    <!-- Message Content with Markdown Rendering -->
+                                    <markdig:MarkdownViewer Grid.Row="1"
+                                                            Markdown="{Binding Content, Mode=OneWay}">
+                                        <markdig:MarkdownViewer.Resources>
+                                            <Style TargetType="FlowDocument">
+                                                <Setter Property="FontFamily" Value="Segoe UI" />
+                                                <Setter Property="FontSize" Value="14" />
+                                                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
+                                                <Setter Property="PagePadding" Value="0" />
+                                            </Style>
+                                            <Style TargetType="Paragraph">
+                                                <Setter Property="Margin" Value="0,0,0,8" />
+                                            </Style>
+                                            <Style TargetType="List">
+                                                <Setter Property="Margin" Value="16,4,0,8" />
+                                                <Setter Property="Padding" Value="0" />
+                                            </Style>
+                                            <Style TargetType="ListItem">
+                                                <Setter Property="Margin" Value="0,2,0,2" />
+                                            </Style>
+                                        </markdig:MarkdownViewer.Resources>
+                                    </markdig:MarkdownViewer>
 
                                     <!-- Streaming Indicator -->
                                     <StackPanel Grid.Row="2"

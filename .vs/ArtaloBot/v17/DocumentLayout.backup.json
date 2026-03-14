@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "D:\\Projects\\ArtaloBot\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{E2A10143-D452-4632-BD69-EFB6589E0A29}|src\\ArtaloBot.Core\\ArtaloBot.Core.csproj|d:\\projects\\artalobot\\src\\artalobot.core\\models\\memoryentry.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E2A10143-D452-4632-BD69-EFB6589E0A29}|src\\ArtaloBot.Core\\ArtaloBot.Core.csproj|solutionrelative:src\\artalobot.core\\models\\memoryentry.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{DD637AA5-F8B5-4EC7-830C-181678F94DF4}|src\\ArtaloBot.Services\\ArtaloBot.Services.csproj|d:\\projects\\artalobot\\src\\artalobot.services\\channels\\whatsappchannel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{DD637AA5-F8B5-4EC7-830C-181678F94DF4}|src\\ArtaloBot.Services\\ArtaloBot.Services.csproj|solutionrelative:src\\artalobot.services\\channels\\whatsappchannel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -16,10 +20,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{D99B834B-42AB-4A7A-B432-F9B0819C7145}|src\\ArtaloBot.Data\\ArtaloBot.Data.csproj|d:\\projects\\artalobot\\src\\artalobot.data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{D99B834B-42AB-4A7A-B432-F9B0819C7145}|src\\ArtaloBot.Data\\ArtaloBot.Data.csproj|solutionrelative:src\\artalobot.data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{E2A10143-D452-4632-BD69-EFB6589E0A29}|src\\ArtaloBot.Core\\ArtaloBot.Core.csproj|d:\\projects\\artalobot\\src\\artalobot.core\\models\\memoryentry.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{E2A10143-D452-4632-BD69-EFB6589E0A29}|src\\ArtaloBot.Core\\ArtaloBot.Core.csproj|solutionrelative:src\\artalobot.core\\models\\memoryentry.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{45D71CF0-AC69-42F4-A3DC-2A6E3CA0E3CD}|src\\ArtaloBot.App\\ArtaloBot.App.csproj|d:\\projects\\artalobot\\src\\artalobot.app\\app.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -49,7 +49,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Bookmark",
@@ -62,6 +62,43 @@
             {
               "$type": "Document",
               "DocumentIndex": 1,
+              "Title": "WhatsAppChannel.cs",
+              "DocumentMoniker": "D:\\Projects\\ArtaloBot\\src\\ArtaloBot.Services\\Channels\\WhatsAppChannel.cs",
+              "RelativeDocumentMoniker": "src\\ArtaloBot.Services\\Channels\\WhatsAppChannel.cs",
+              "ToolTip": "D:\\Projects\\ArtaloBot\\src\\ArtaloBot.Services\\Channels\\WhatsAppChannel.cs",
+              "RelativeToolTip": "src\\ArtaloBot.Services\\Channels\\WhatsAppChannel.cs",
+              "ViewState": "AgIAAJYAAAAAAAAAAAAAAKIAAABKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-13T14:50:21.377Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "XamlReader.cs",
+              "DocumentMoniker": "C:\\Users\\ASUS\\AppData\\Local\\Temp\\.vsdbgsrc\\0a84cc53936b314ba955b54f50bf4796d8234943f3fd7b93873381b45d404026\\XamlReader.cs",
+              "ToolTip": "C:\\Users\\ASUS\\AppData\\Local\\Temp\\.vsdbgsrc\\0a84cc53936b314ba955b54f50bf4796d8234943f3fd7b93873381b45d404026\\XamlReader.cs [Read Only]",
+              "ViewState": "AgIAAKsBAAAAAAAAAAAewLUBAAACAAAAAQAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-13T00:41:08.139Z",
+              "EditorCaption": " [Read Only]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "MemoryEntry.cs",
+              "DocumentMoniker": "D:\\Projects\\ArtaloBot\\src\\ArtaloBot.Core\\Models\\MemoryEntry.cs",
+              "RelativeDocumentMoniker": "src\\ArtaloBot.Core\\Models\\MemoryEntry.cs",
+              "ToolTip": "D:\\Projects\\ArtaloBot\\src\\ArtaloBot.Core\\Models\\MemoryEntry.cs",
+              "RelativeToolTip": "src\\ArtaloBot.Core\\Models\\MemoryEntry.cs",
+              "ViewState": "AgIAACcAAAAAAAAAAADwvzMAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-12T15:03:10.669Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
               "Title": "DebugService.cs",
               "DocumentMoniker": "D:\\Projects\\ArtaloBot\\src\\ArtaloBot.Services\\Debug\\DebugService.cs",
               "RelativeDocumentMoniker": "src\\ArtaloBot.Services\\Debug\\DebugService.cs",
@@ -74,49 +111,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "WhatsAppChannel.cs",
-              "DocumentMoniker": "D:\\Projects\\ArtaloBot\\src\\ArtaloBot.Services\\Channels\\WhatsAppChannel.cs",
-              "RelativeDocumentMoniker": "src\\ArtaloBot.Services\\Channels\\WhatsAppChannel.cs",
-              "ToolTip": "D:\\Projects\\ArtaloBot\\src\\ArtaloBot.Services\\Channels\\WhatsAppChannel.cs",
-              "RelativeToolTip": "src\\ArtaloBot.Services\\Channels\\WhatsAppChannel.cs",
-              "ViewState": "AgIAAJYAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-13T14:50:21.377Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "XamlReader.cs",
-              "DocumentMoniker": "C:\\Users\\ASUS\\AppData\\Local\\Temp\\.vsdbgsrc\\0a84cc53936b314ba955b54f50bf4796d8234943f3fd7b93873381b45d404026\\XamlReader.cs",
-              "ToolTip": "C:\\Users\\ASUS\\AppData\\Local\\Temp\\.vsdbgsrc\\0a84cc53936b314ba955b54f50bf4796d8234943f3fd7b93873381b45d404026\\XamlReader.cs [Read Only]",
-              "ViewState": "AgIAAKsBAAAAAAAAAAAewLUBAAACAAAAAQAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-13T00:41:08.139Z",
-              "EditorCaption": " [Read Only]"
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 4,
-              "Title": "MemoryEntry.cs",
-              "DocumentMoniker": "D:\\Projects\\ArtaloBot\\src\\ArtaloBot.Core\\Models\\MemoryEntry.cs",
-              "RelativeDocumentMoniker": "src\\ArtaloBot.Core\\Models\\MemoryEntry.cs",
-              "ToolTip": "D:\\Projects\\ArtaloBot\\src\\ArtaloBot.Core\\Models\\MemoryEntry.cs",
-              "RelativeToolTip": "src\\ArtaloBot.Core\\Models\\MemoryEntry.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAD0AAAA/AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-12T15:03:10.669Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
               "Title": "AppDbContext.cs",
               "DocumentMoniker": "D:\\Projects\\ArtaloBot\\src\\ArtaloBot.Data\\AppDbContext.cs",
               "RelativeDocumentMoniker": "src\\ArtaloBot.Data\\AppDbContext.cs",
               "ToolTip": "D:\\Projects\\ArtaloBot\\src\\ArtaloBot.Data\\AppDbContext.cs",
               "RelativeToolTip": "src\\ArtaloBot.Data\\AppDbContext.cs",
-              "ViewState": "AgIAABMAAAAAAAAAAAAAAAoAAAAYAAAAAAAAAA==",
+              "ViewState": "AgIAABcAAAAAAAAAAAAAAAoAAAAYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-03-12T14:54:38.632Z",
               "EditorCaption": ""

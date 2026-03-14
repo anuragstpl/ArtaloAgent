@@ -6,7 +6,7 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:converters="clr-namespace:ArtaloBot.App.Converters"
              mc:Ignorable="d"
-             d:DesignHeight="700" d:DesignWidth="900">
+             d:DesignHeight="700" d:DesignWidth="1100">
 
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVis" />
@@ -16,7 +16,7 @@
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="380" />
         </Grid.ColumnDefinitions>
 
         <!-- Main Content -->
@@ -29,7 +29,7 @@
                            Style="{StaticResource MaterialDesignHeadline4TextBlock}"
                            Margin="0,0,0,8" />
 
-                <TextBlock Text="Connect ArtaloBot to messaging platforms to chat anywhere"
+                <TextBlock Text="Connect messaging platforms and assign AI agents to respond with specific knowledge"
                            Style="{StaticResource MaterialDesignBody1TextBlock}"
                            Opacity="0.7"
                            Margin="0,0,0,24" />
@@ -43,6 +43,7 @@
                                                  Background="{DynamicResource MaterialDesignCardBackground}">
                                 <Grid>
                                     <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
@@ -100,8 +101,70 @@
                                         </StackPanel>
                                     </Grid>
 
+                                    <!-- Assigned Agents Section -->
+                                    <StackPanel Grid.Row="1"
+                                                Visibility="{Binding IsComingSoon, Converter={StaticResource InverseBoolToVis}}"
+                                                Margin="0,0,0,16">
+                                        <TextBlock Text="Assigned Agents"
+                                                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                                   Margin="0,0,0,8" />
+
+                                        <!-- No agents assigned message -->
+                                        <TextBlock Text="No agents assigned. Messages will use general AI responses."
+                                                   Opacity="0.5"
+                                                   FontStyle="Italic"
+                                                   Margin="0,0,0,8">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignBody2TextBlock}">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding AssignedAgents.Count}" Value="0">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+
+                                        <!-- Assigned agents list -->
+                                        <ItemsControl ItemsSource="{Binding AssignedAgents}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel Orientation="Horizontal" />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="{DynamicResource PrimaryHueLightBrush}"
+                                                            CornerRadius="16"
+                                                            Padding="12,6"
+                                                            Margin="0,0,8,8">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <materialDesign:PackIcon Kind="{Binding AgentIcon}"
+                                                                                     Width="16" Height="16"
+                                                                                     Margin="0,0,6,0"
+                                                                                     VerticalAlignment="Center" />
+                                                            <TextBlock Text="{Binding AgentName}"
+                                                                       VerticalAlignment="Center"
+                                                                       FontWeight="Medium" />
+                                                            <Button Style="{StaticResource MaterialDesignIconForegroundButton}"
+                                                                    Width="20" Height="20"
+                                                                    Margin="6,0,0,0"
+                                                                    Padding="0"
+                                                                    ToolTip="Remove agent"
+                                                                    Command="{Binding DataContext.UnassignAgentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                    CommandParameter="{Binding}">
+                                                                <materialDesign:PackIcon Kind="Close" Width="14" Height="14" />
+                                                            </Button>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+
                                     <!-- Configuration Fields (for non-QR channels) -->
-                                    <ItemsControl Grid.Row="1"
+                                    <ItemsControl Grid.Row="2"
                                                   ItemsSource="{Binding ConfigurationFields}"
                                                   Visibility="{Binding IsComingSoon, Converter={StaticResource InverseBoolToVis}}">
                                         <ItemsControl.ItemTemplate>
@@ -115,7 +178,7 @@
                                     </ItemsControl>
 
                                     <!-- Action Buttons -->
-                                    <StackPanel Grid.Row="2"
+                                    <StackPanel Grid.Row="3"
                                                 Orientation="Horizontal"
                                                 HorizontalAlignment="Left"
                                                 Visibility="{Binding IsComingSoon, Converter={StaticResource InverseBoolToVis}}">
@@ -163,123 +226,220 @@
             </StackPanel>
         </ScrollViewer>
 
-        <!-- QR Code Panel (Right Side) -->
+        <!-- Right Panel: QR Code / Connected / Agent Assignment -->
         <Border Grid.Column="1"
-                Width="350"
                 Background="{DynamicResource MaterialDesignCardBackground}"
                 BorderBrush="{DynamicResource MaterialDesignDivider}"
-                BorderThickness="1,0,0,0"
-                Visibility="{Binding ShowQrCode, Converter={StaticResource BoolToVis}}">
-            <StackPanel Margin="24" VerticalAlignment="Center">
-                <!-- WhatsApp Header -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,24">
-                    <materialDesign:PackIcon Kind="Whatsapp"
-                                             Width="32" Height="32"
-                                             Foreground="#25D366"
-                                             VerticalAlignment="Center"
-                                             Margin="0,0,12,0" />
-                    <TextBlock Text="WhatsApp"
-                               Style="{StaticResource MaterialDesignHeadline5TextBlock}"
-                               VerticalAlignment="Center" />
-                </StackPanel>
+                BorderThickness="1,0,0,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="24">
 
-                <!-- QR Code Image -->
-                <Border Background="White"
-                        CornerRadius="8"
-                        Padding="16"
-                        HorizontalAlignment="Center"
-                        Margin="0,0,0,24">
-                    <Image Source="{Binding QrCodeImage}"
-                           Width="250" Height="250"
-                           RenderOptions.BitmapScalingMode="NearestNeighbor" />
-                </Border>
+                    <!-- QR Code Section (when scanning) -->
+                    <StackPanel Visibility="{Binding ShowQrCode, Converter={StaticResource BoolToVis}}">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,24">
+                            <materialDesign:PackIcon Kind="Whatsapp"
+                                                     Width="32" Height="32"
+                                                     Foreground="#25D366"
+                                                     VerticalAlignment="Center"
+                                                     Margin="0,0,12,0" />
+                            <TextBlock Text="WhatsApp"
+                                       Style="{StaticResource MaterialDesignHeadline5TextBlock}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
 
-                <!-- Instructions -->
-                <TextBlock Text="Scan with WhatsApp"
-                           Style="{StaticResource MaterialDesignHeadline6TextBlock}"
-                           HorizontalAlignment="Center"
-                           Margin="0,0,0,12" />
+                        <Border Background="White"
+                                CornerRadius="8"
+                                Padding="16"
+                                HorizontalAlignment="Center"
+                                Margin="0,0,0,24">
+                            <Image Source="{Binding QrCodeImage}"
+                                   Width="220" Height="220"
+                                   RenderOptions.BitmapScalingMode="NearestNeighbor" />
+                        </Border>
 
-                <TextBlock TextWrapping="Wrap"
-                           TextAlignment="Center"
-                           Style="{StaticResource MaterialDesignBody2TextBlock}"
-                           Opacity="0.7"
-                           Margin="0,0,0,24">
-                    <Run Text="1. Open WhatsApp on your phone" />
-                    <LineBreak />
-                    <Run Text="2. Tap Menu or Settings" />
-                    <LineBreak />
-                    <Run Text="3. Select 'Linked Devices'" />
-                    <LineBreak />
-                    <Run Text="4. Tap 'Link a Device'" />
-                    <LineBreak />
-                    <Run Text="5. Point your phone at this QR code" />
-                </TextBlock>
+                        <TextBlock Text="Scan with WhatsApp"
+                                   Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,12" />
 
-                <!-- Status -->
-                <Border Background="{DynamicResource PrimaryHueLightBrush}"
-                        CornerRadius="4"
-                        Padding="12,8"
-                        HorizontalAlignment="Center">
-                    <StackPanel Orientation="Horizontal">
-                        <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
-                                     IsIndeterminate="True"
-                                     Width="16" Height="16"
-                                     Margin="0,0,8,0" />
-                        <TextBlock Text="{Binding WhatsAppStatus}"
-                                   Style="{StaticResource MaterialDesignBody2TextBlock}" />
+                        <TextBlock TextWrapping="Wrap"
+                                   TextAlignment="Center"
+                                   Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                   Opacity="0.7"
+                                   Margin="0,0,0,24">
+                            <Run Text="1. Open WhatsApp on your phone" />
+                            <LineBreak />
+                            <Run Text="2. Go to Settings > Linked Devices" />
+                            <LineBreak />
+                            <Run Text="3. Tap 'Link a Device'" />
+                            <LineBreak />
+                            <Run Text="4. Scan this QR code" />
+                        </TextBlock>
+
+                        <Border Background="{DynamicResource PrimaryHueLightBrush}"
+                                CornerRadius="4"
+                                Padding="12,8"
+                                HorizontalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                             IsIndeterminate="True"
+                                             Width="16" Height="16"
+                                             Margin="0,0,8,0" />
+                                <TextBlock Text="{Binding WhatsAppStatus}"
+                                           Style="{StaticResource MaterialDesignBody2TextBlock}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Button Content="Refresh QR Code"
+                                Style="{StaticResource MaterialDesignOutlinedButton}"
+                                Command="{Binding RefreshQrCodeCommand}"
+                                HorizontalAlignment="Center"
+                                Margin="0,16,0,0" />
                     </StackPanel>
-                </Border>
 
-                <!-- Refresh Button -->
-                <Button Content="Refresh QR Code"
-                        Style="{StaticResource MaterialDesignOutlinedButton}"
-                        Command="{Binding RefreshQrCodeCommand}"
-                        HorizontalAlignment="Center"
-                        Margin="0,16,0,0" />
-            </StackPanel>
-        </Border>
+                    <!-- Connected Status + Agent Assignment -->
+                    <StackPanel Visibility="{Binding ShowQrCode, Converter={StaticResource InverseBoolToVis}}">
 
-        <!-- Connected Panel (shows instead of QR when connected) -->
-        <Border Grid.Column="1"
-                Width="350"
-                Background="{DynamicResource MaterialDesignCardBackground}"
-                BorderBrush="{DynamicResource MaterialDesignDivider}"
-                BorderThickness="1,0,0,0"
-                Visibility="{Binding ConnectedNumber, Converter={StaticResource NullToVisibilityConverter}}">
-            <StackPanel Margin="24" VerticalAlignment="Center" HorizontalAlignment="Center">
-                <materialDesign:PackIcon Kind="CheckCircle"
-                                         Width="64" Height="64"
-                                         Foreground="#4CAF50"
-                                         HorizontalAlignment="Center"
-                                         Margin="0,0,0,16" />
+                        <!-- Connected Status -->
+                        <StackPanel Visibility="{Binding ConnectedNumber, Converter={StaticResource NullToVisibilityConverter}}"
+                                    Margin="0,0,0,24">
+                            <materialDesign:PackIcon Kind="CheckCircle"
+                                                     Width="48" Height="48"
+                                                     Foreground="#4CAF50"
+                                                     HorizontalAlignment="Center"
+                                                     Margin="0,0,0,12" />
 
-                <TextBlock Text="WhatsApp Connected"
-                           Style="{StaticResource MaterialDesignHeadline5TextBlock}"
-                           HorizontalAlignment="Center"
-                           Margin="0,0,0,8" />
+                            <TextBlock Text="WhatsApp Connected"
+                                       Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,0,0,4" />
 
-                <TextBlock Text="{Binding ConnectedNumber, StringFormat='Phone: {0}'}"
-                           Style="{StaticResource MaterialDesignBody1TextBlock}"
-                           HorizontalAlignment="Center"
-                           Opacity="0.7"
-                           Margin="0,0,0,24" />
+                            <TextBlock Text="{Binding ConnectedNumber, StringFormat='Phone: {0}'}"
+                                       Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                       HorizontalAlignment="Center"
+                                       Opacity="0.7"
+                                       Margin="0,0,0,12" />
 
-                <TextBlock TextWrapping="Wrap"
-                           TextAlignment="Center"
-                           Style="{StaticResource MaterialDesignBody2TextBlock}"
-                           Opacity="0.7"
-                           Margin="0,0,0,24">
-                    Messages sent to this number will be
-                    processed by ArtaloBot using your local Ollama.
-                </TextBlock>
+                            <Button Content="Disconnect"
+                                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                                    Command="{Binding DisconnectChannelCommand}"
+                                    CommandParameter="{Binding Channels[0]}"
+                                    HorizontalAlignment="Center" />
+                        </StackPanel>
 
-                <Button Content="Disconnect"
-                        Style="{StaticResource MaterialDesignOutlinedButton}"
-                        Command="{Binding DisconnectChannelCommand}"
-                        CommandParameter="{Binding Channels[0]}"
-                        HorizontalAlignment="Center" />
-            </StackPanel>
+                        <Separator Margin="0,0,0,24"
+                                   Visibility="{Binding ConnectedNumber, Converter={StaticResource NullToVisibilityConverter}}" />
+
+                        <!-- Agent Assignment Section -->
+                        <TextBlock Text="Assign Agents to WhatsApp"
+                                   Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                                   Margin="0,0,0,8" />
+
+                        <TextBlock TextWrapping="Wrap"
+                                   Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                   Opacity="0.7"
+                                   Margin="0,0,0,16">
+                            Select which agents will respond to WhatsApp messages. Each agent uses its own knowledge base to answer questions.
+                        </TextBlock>
+
+                        <!-- Available Agents to Assign -->
+                        <TextBlock Text="Available Agents"
+                                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                   Margin="0,0,0,8" />
+
+                        <ItemsControl ItemsSource="{Binding AvailableAgents}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{DynamicResource MaterialDesignCardBackground}"
+                                            BorderBrush="{DynamicResource MaterialDesignDivider}"
+                                            BorderThickness="1"
+                                            CornerRadius="8"
+                                            Padding="12"
+                                            Margin="0,0,0,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <Border Grid.Column="0"
+                                                    Width="36" Height="36"
+                                                    CornerRadius="8"
+                                                    Background="{DynamicResource PrimaryHueLightBrush}"
+                                                    Margin="0,0,12,0">
+                                                <materialDesign:PackIcon Kind="{Binding AgentIcon}"
+                                                                         Width="20" Height="20"
+                                                                         HorizontalAlignment="Center"
+                                                                         VerticalAlignment="Center" />
+                                            </Border>
+
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding AgentName}"
+                                                           FontWeight="Medium" />
+                                                <TextBlock Opacity="0.7" FontSize="12">
+                                                    <Run Text="{Binding DocumentCount, Mode=OneWay}" />
+                                                    <Run Text="documents" />
+                                                </TextBlock>
+                                            </StackPanel>
+
+                                            <Button Grid.Column="2"
+                                                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                                                    Content="Assign"
+                                                    Padding="12,4"
+                                                    Command="{Binding DataContext.AssignAgentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Visibility="{Binding IsAssigned, Converter={StaticResource InverseBoolToVis}}" />
+
+                                            <materialDesign:Chip Grid.Column="2"
+                                                                 Content="Assigned"
+                                                                 Background="#4CAF50"
+                                                                 Foreground="White"
+                                                                 Visibility="{Binding IsAssigned, Converter={StaticResource BoolToVis}}" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- No agents message -->
+                        <Border Background="{DynamicResource MaterialDesignCardBackground}"
+                                BorderBrush="{DynamicResource MaterialDesignDivider}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="24"
+                                Margin="0,8,0,0">
+                            <StackPanel HorizontalAlignment="Center">
+                                <materialDesign:PackIcon Kind="AccountCircle"
+                                                         Width="48" Height="48"
+                                                         HorizontalAlignment="Center"
+                                                         Opacity="0.3"
+                                                         Margin="0,0,0,12" />
+                                <TextBlock Text="No agents available"
+                                           Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                           HorizontalAlignment="Center"
+                                           Opacity="0.5" />
+                                <TextBlock Text="Create agents in the Agents page first"
+                                           Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                           HorizontalAlignment="Center"
+                                           Opacity="0.5"
+                                           FontSize="12"
+                                           Margin="0,4,0,0" />
+                            </StackPanel>
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding AvailableAgents.Count}" Value="0">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
         </Border>
     </Grid>
 </UserControl>

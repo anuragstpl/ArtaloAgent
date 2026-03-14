@@ -7,7 +7,16 @@
       "Bash(dotnet add:*)",
       "Bash(dotnet build:*)",
       "Bash(dotnet remove package:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(dotnet nuget search:*)",
+      "WebSearch",
+      "Bash(npm update:*)",
+      "Bash(npm show:*)",
+      "Bash(npm install:*)",
+      "Bash(nvidia-smi:*)",
+      "Bash(wmic OS get:*)",
+      "Bash(systeminfo:*)",
+      "Bash(wmic:*)"
     ]
   }
 }

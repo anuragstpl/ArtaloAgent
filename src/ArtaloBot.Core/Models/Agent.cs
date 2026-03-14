@@ -84,4 +84,22 @@ public class AgentSearchResult
     public AgentChunk Chunk { get; set; } = null!;
     public float Similarity { get; set; }
     public string DocumentName { get; set; } = string.Empty;
+    public string AgentName { get; set; } = string.Empty;
+    public int AgentId { get; set; }
+}
+
+/// <summary>
+/// Links an agent to a channel for knowledge-based responses.
+/// </summary>
+public class ChannelAgentAssignment
+{
+    public int Id { get; set; }
+    public ChannelType ChannelType { get; set; }
+    public int AgentId { get; set; }
+    public int Priority { get; set; } = 0; // Higher priority = checked first
+    public bool IsEnabled { get; set; } = true;
+    public DateTime AssignedAt { get; set; } = DateTime.UtcNow;
+
+    // Navigation
+    public Agent? Agent { get; set; }
 }

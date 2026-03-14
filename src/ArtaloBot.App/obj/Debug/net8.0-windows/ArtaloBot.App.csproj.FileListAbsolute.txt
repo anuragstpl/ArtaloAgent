@@ -129,3 +129,16 @@ D:\Projects\ArtaloBot\src\ArtaloBot.App\obj\Debug\net8.0-windows\Views\DebugWind
 D:\Projects\ArtaloBot\src\ArtaloBot.App\obj\Debug\net8.0-windows\Views\MCPView.g.cs
 D:\Projects\ArtaloBot\src\ArtaloBot.App\obj\Debug\net8.0-windows\Views\MCPView.baml
 D:\Projects\ArtaloBot\src\ArtaloBot.App\obj\Debug\net8.0-windows\ArtaloBot.App.sourcelink.json
+D:\Projects\ArtaloBot\src\ArtaloBot.App\bin\Debug\net8.0-windows\DocumentFormat.OpenXml.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.App\bin\Debug\net8.0-windows\DocumentFormat.OpenXml.Framework.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.App\bin\Debug\net8.0-windows\ExcelDataReader.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.App\bin\Debug\net8.0-windows\ExcelDataReader.DataSet.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.App\bin\Debug\net8.0-windows\UglyToad.PdfPig.Core.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.App\bin\Debug\net8.0-windows\UglyToad.PdfPig.DocumentLayoutAnalysis.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.App\bin\Debug\net8.0-windows\UglyToad.PdfPig.Fonts.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.App\bin\Debug\net8.0-windows\UglyToad.PdfPig.Package.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.App\bin\Debug\net8.0-windows\UglyToad.PdfPig.Tokenization.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.App\bin\Debug\net8.0-windows\UglyToad.PdfPig.Tokens.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.App\bin\Debug\net8.0-windows\UglyToad.PdfPig.dll
+D:\Projects\ArtaloBot\src\ArtaloBot.App\obj\Debug\net8.0-windows\Views\AgentsView.baml
+D:\Projects\ArtaloBot\src\ArtaloBot.App\obj\Debug\net8.0-windows\Views\AgentsView.g.cs

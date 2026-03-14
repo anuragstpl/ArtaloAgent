@@ -353,6 +353,10 @@
               "target": "Package",
               "version": "[2.9.1, )"
             },
+            "PdfPig": {
+              "target": "Package",
+              "version": "[0.1.8, )"
+            },
             "Polly.Extensions.Http": {
               "target": "Package",
               "version": "[3.0.0, )"
@@ -364,10 +368,6 @@
             "Twilio": {
               "target": "Package",
               "version": "[7.14.3, )"
-            },
-            "UglyToad.PdfPig": {
-              "target": "Package",
-              "version": "[0.1.9, )"
             }
           },
           "imports": [

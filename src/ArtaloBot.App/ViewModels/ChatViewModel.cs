@@ -20,6 +20,7 @@ public partial class ChatViewModel : ObservableObject
     private readonly IMemoryService _memoryService;
     private readonly IDebugService _debugService;
     private readonly IMCPService _mcpService;
+    private readonly IAgentService _agentService;
     private readonly QueryRouter _queryRouter;
     private CancellationTokenSource? _streamingCts;
     private CancellationTokenSource? _debounceCts;
@@ -61,6 +62,16 @@ public partial class ChatViewModel : ObservableObject
     [ObservableProperty]
     private int _memoryCount;
 
+    // Agent selection for knowledge-based chat
+    [ObservableProperty]
+    private ObservableCollection<Agent> _availableAgents = [];
+
+    [ObservableProperty]
+    private Agent? _selectedAgent;
+
+    [ObservableProperty]
+    private bool _useAgentKnowledge;
+
     public ObservableCollection<LLMProviderType> AvailableProviders { get; } =
     [
         LLMProviderType.OpenAI,
@@ -74,7 +85,8 @@ public partial class ChatViewModel : ObservableObject
         ILLMServiceFactory llmFactory,
         IMemoryService memoryService,
         IDebugService debugService,
-        IMCPService mcpService)
+        IMCPService mcpService,
+        IAgentService agentService)
     {
         _chatRepository = chatRepository;
         _settingsService = settingsService;
@@ -82,6 +94,7 @@ public partial class ChatViewModel : ObservableObject
         _memoryService = memoryService;
         _debugService = debugService;
         _mcpService = mcpService;
+        _agentService = agentService;
 
         // Initialize query router for intent-based routing
         _queryRouter = new QueryRouter(mcpService, debugService);
@@ -89,11 +102,85 @@ public partial class ChatViewModel : ObservableObject
         // Subscribe to collection changes to update HasMessages
         Messages.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasMessages));
 
-        _debugService.Info("Chat", "ChatViewModel initialized with QueryRouter");
+        _debugService.Info("Chat", "ChatViewModel initialized with QueryRouter and AgentService");
 
         // Initialize Ollama service by default (no API key needed)
         InitializeOllamaAsync();
         _ = RefreshMemoryStatusAsync();
+        _ = LoadAvailableAgentsAsync();
+    }
+
+    /// <summary>
+    /// Loads all enabled agents for selection in chat.
+    /// </summary>
+    public async Task LoadAvailableAgentsAsync()
+    {
+        try
+        {
+            var agents = await _agentService.GetAllAgentsAsync();
+            var enabledAgents = agents.Where(a => a.IsEnabled).ToList();
+
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                AvailableAgents.Clear();
+                // Add "None" option represented as null
+                foreach (var agent in enabledAgents)
+                {
+                    AvailableAgents.Add(agent);
+                }
+
+                _debugService.Info("Chat", $"Loaded {enabledAgents.Count} agent(s) for chat");
+            });
+        }
+        catch (Exception ex)
+        {
+            _debugService.Error("Chat", "Failed to load agents", ex.Message);
+        }
+    }
+
+    partial void OnSelectedAgentChanged(Agent? value)
+    {
+        UseAgentKnowledge = value != null;
+        if (value != null)
+        {
+            _debugService.Info("Chat", $"Selected agent: {value.Name}",
+                $"Documents: {value.Documents?.Count ?? 0}");
+
+            // Check agent's knowledge status
+            _ = CheckAgentKnowledgeStatusAsync(value);
+        }
+        else
+        {
+            _debugService.Info("Chat", "Agent knowledge disabled");
+        }
+    }
+
+    private async Task CheckAgentKnowledgeStatusAsync(Agent agent)
+    {
+        try
+        {
+            var totalChunks = await _agentService.GetTotalChunksAsync(agent.Id);
+            var totalDocs = await _agentService.GetTotalDocumentsAsync(agent.Id);
+
+            if (totalChunks == 0)
+            {
+                _debugService.Warning("Chat",
+                    $"Agent '{agent.Name}' has NO knowledge chunks!",
+                    $"Documents: {totalDocs} | Chunks: {totalChunks} - Please upload and process documents");
+                StatusMessage = $"Warning: Agent '{agent.Name}' has no processed knowledge";
+            }
+            else
+            {
+                _debugService.Success("Chat",
+                    $"Agent '{agent.Name}' ready with {totalChunks} knowledge chunks",
+                    $"Documents: {totalDocs}");
+                StatusMessage = $"Using {agent.Name} ({totalChunks} knowledge chunks)";
+            }
+        }
+        catch (Exception ex)
+        {
+            _debugService.Error("Chat", "Failed to check agent status", ex.Message);
+        }
     }
 
     private async void InitializeOllamaAsync()
@@ -612,6 +699,54 @@ public partial class ChatViewModel : ObservableObject
                 }
             }
 
+            // ── Handle AGENT KNOWLEDGE search ─────────────────────────────
+            string? agentKnowledgeContext = null;
+            if (SelectedAgent != null && UseAgentKnowledge)
+            {
+                StatusMessage = $"Searching {SelectedAgent.Name} knowledge...";
+                _debugService.Info("AgentKnowledge", $"Searching agent: {SelectedAgent.Name}",
+                    $"Query: {lastUserMsg}");
+
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                var searchResults = await _agentService.SearchKnowledgeAsync(
+                    SelectedAgent.Id,
+                    lastUserMsg,
+                    maxResults: 5);
+                var searchTime = stopwatch.ElapsedMilliseconds;
+
+                if (searchResults.Count > 0)
+                {
+                    _debugService.Success("AgentKnowledge",
+                        $"Found {searchResults.Count} relevant chunks from {SelectedAgent.Name}",
+                        $"Time: {searchTime}ms | Best match: {searchResults[0].Similarity:F3}");
+
+                    var sb = new StringBuilder();
+                    sb.AppendLine($"## KNOWLEDGE FROM: {SelectedAgent.Name.ToUpper()}");
+                    if (!string.IsNullOrEmpty(SelectedAgent.Description))
+                    {
+                        sb.AppendLine($"Agent description: {SelectedAgent.Description}");
+                    }
+                    sb.AppendLine();
+                    sb.AppendLine("Use this knowledge to answer the user's question:");
+                    sb.AppendLine();
+
+                    foreach (var result in searchResults)
+                    {
+                        sb.AppendLine($"[Source: {result.DocumentName}]");
+                        sb.AppendLine(result.Chunk.Content);
+                        sb.AppendLine();
+                    }
+
+                    agentKnowledgeContext = sb.ToString();
+                }
+                else
+                {
+                    _debugService.Warning("AgentKnowledge",
+                        $"No relevant knowledge found in {SelectedAgent.Name}",
+                        $"Time: {searchTime}ms");
+                }
+            }
+
             // ═══════════════════════════════════════════════════════════════
             // BUILD SYSTEM PROMPT (clean, no tool instructions)
             // ═══════════════════════════════════════════════════════════════
@@ -621,6 +756,19 @@ public partial class ChatViewModel : ObservableObject
             if (!string.IsNullOrEmpty(settings.SystemPrompt))
             {
                 systemPromptParts.Add(settings.SystemPrompt);
+            }
+
+            // Add agent's custom system prompt if selected
+            if (SelectedAgent != null && !string.IsNullOrEmpty(SelectedAgent.SystemPrompt))
+            {
+                systemPromptParts.Add($"## AGENT INSTRUCTIONS\n{SelectedAgent.SystemPrompt}");
+            }
+
+            // Add agent knowledge context (highest priority for answers)
+            if (!string.IsNullOrEmpty(agentKnowledgeContext))
+            {
+                systemPromptParts.Add(agentKnowledgeContext);
+                systemPromptParts.Add("IMPORTANT: Base your answer primarily on the knowledge provided above. If the answer isn't in the knowledge, say so.");
             }
 
             // Add tool result context if we executed a tool
@@ -743,6 +891,14 @@ public partial class ChatViewModel : ObservableObject
         CurrentSession = null;
         MemoryCount = 0;
         StatusMessage = "Chat cleared";
+    }
+
+    [RelayCommand]
+    private void ClearAgent()
+    {
+        SelectedAgent = null;
+        UseAgentKnowledge = false;
+        _debugService.Info("Chat", "Agent knowledge disabled");
     }
 
     [RelayCommand]

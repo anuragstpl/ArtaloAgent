@@ -48,7 +48,7 @@ public class MemorySettings
     public string EmbeddingProvider { get; set; } = "ollama";
 
     /// <summary>Embedding model name (relevant for Ollama and OpenAI providers).</summary>
-    public string EmbeddingModel { get; set; } = "nomic-embed-text:latest";
+    public string EmbeddingModel { get; set; } = "mxbai-embed-large:latest";
 
     /// <summary>Cosine similarity threshold (0–1). Memories below this score are excluded.</summary>
     public double SimilarityThreshold { get; set; } = 0.40; // Lowered for better semantic matching

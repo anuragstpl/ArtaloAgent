@@ -49,9 +49,9 @@ async function connectWhatsApp() {
         sock = makeWASocket({
             version,
             auth: state,
-            printQRInTerminal: true,
             logger: pino({ level: 'silent' }),
-            browser: ['ArtaloBot', 'Chrome', '1.0.0']
+            browser: ['ArtaloBot', 'Chrome', '1.0.0'],
+            syncFullHistory: false
         });
 
         // Handle connection updates
@@ -63,18 +63,43 @@ async function connectWhatsApp() {
                 qrCode = await QRCode.toDataURL(qr);
                 connectionStatus = 'waiting_for_scan';
                 logger.info('QR Code generated, waiting for scan...');
+
+                // Also print QR code to terminal as ASCII for debugging
+                const qrcodeTerminal = require('qrcode-terminal');
+                qrcodeTerminal.generate(qr, { small: true });
             }
 
             if (connection === 'close') {
-                const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
-                logger.info(`Connection closed. Reconnecting: ${shouldReconnect}`);
+                const statusCode = lastDisconnect?.error?.output?.statusCode;
+                const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+
+                logger.info(`Connection closed. Status: ${statusCode}, Reconnecting: ${shouldReconnect}`);
 
                 connectionStatus = 'disconnected';
                 qrCode = null;
                 connectedNumber = null;
 
                 if (shouldReconnect) {
-                    setTimeout(connectWhatsApp, 3000);
+                    // If connection failed and we have no credentials, request new QR
+                    if (statusCode === DisconnectReason.connectionClosed ||
+                        statusCode === DisconnectReason.connectionLost ||
+                        statusCode === DisconnectReason.timedOut ||
+                        statusCode === DisconnectReason.restartRequired) {
+                        logger.info('Reconnecting in 3 seconds...');
+                        setTimeout(connectWhatsApp, 3000);
+                    } else if (statusCode === DisconnectReason.badSession) {
+                        // Clear bad session and restart
+                        logger.info('Bad session detected, clearing auth and restarting...');
+                        if (fs.existsSync(AUTH_DIR)) {
+                            fs.rmSync(AUTH_DIR, { recursive: true, force: true });
+                            fs.mkdirSync(AUTH_DIR, { recursive: true });
+                        }
+                        setTimeout(connectWhatsApp, 1000);
+                    } else {
+                        // Other errors - try to reconnect anyway
+                        logger.info('Attempting reconnect in 5 seconds...');
+                        setTimeout(connectWhatsApp, 5000);
+                    }
                 }
             } else if (connection === 'open') {
                 connectionStatus = 'connected';

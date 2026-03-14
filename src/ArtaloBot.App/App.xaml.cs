@@ -6,6 +6,7 @@ using ArtaloBot.App.ViewModels;
 using ArtaloBot.Core.Interfaces;
 using ArtaloBot.Data;
 using ArtaloBot.Data.Repositories;
+using ArtaloBot.Services.Agents;
 using ArtaloBot.Services.Channels;
 using ArtaloBot.Services.LLM;
 using ArtaloBot.Services.Debug;
@@ -91,6 +92,25 @@ public partial class App : Application
             return new MCPClientService(dbFactory, debugService);
         });
 
+        // Document Processor (with LLM for semantic chunking)
+        services.AddSingleton<IDocumentProcessor>(sp =>
+        {
+            var memoryService = sp.GetRequiredService<IMemoryService>();
+            var debugService = sp.GetRequiredService<IDebugService>();
+            var llmFactory = sp.GetRequiredService<ILLMServiceFactory>();
+            return new DocumentProcessor(memoryService, debugService, llmFactory);
+        });
+
+        // Agent Service
+        services.AddSingleton<IAgentService>(sp =>
+        {
+            var dbFactory = sp.GetRequiredService<IDbContextFactory<AppDbContext>>();
+            var documentProcessor = sp.GetRequiredService<IDocumentProcessor>();
+            var memoryService = sp.GetRequiredService<IMemoryService>();
+            var debugService = sp.GetRequiredService<IDebugService>();
+            return new AgentService(dbFactory, documentProcessor, memoryService, debugService);
+        });
+
         // Skills
         services.AddSingleton<ISkillRegistry, SkillRegistry>();
         services.AddSingleton<CalculatorSkill>();
@@ -120,10 +140,18 @@ public partial class App : Application
         {
             var settingsService = sp.CreateScope().ServiceProvider.GetRequiredService<ISettingsService>();
             var channelManager = sp.GetRequiredService<IChannelManager>();
+            var agentService = sp.GetRequiredService<IAgentService>();
             var debugService = sp.GetRequiredService<IDebugService>();
-            return new ChannelsViewModel(settingsService, channelManager, debugService);
+            return new ChannelsViewModel(settingsService, channelManager, agentService, debugService);
         });
         services.AddSingleton<MCPViewModel>();
+        services.AddSingleton<AgentsViewModel>(sp =>
+        {
+            var agentService = sp.GetRequiredService<IAgentService>();
+            var documentProcessor = sp.GetRequiredService<IDocumentProcessor>();
+            var debugService = sp.GetRequiredService<IDebugService>();
+            return new AgentsViewModel(agentService, documentProcessor, debugService);
+        });
 
         // Services
         services.AddSingleton<INavigationService, NavigationService>();
@@ -148,6 +176,7 @@ public partial class App : Application
         // Ensure new tables exist (in case db was created before these tables were added)
         await EnsureMemoryEntriesTableExistsAsync(dbContext);
         await EnsureMCPServersTableExistsAsync(dbContext);
+        await EnsureAgentsTablesExistAsync(dbContext);
 
         // Register skills
         var skillRegistry = _host.Services.GetRequiredService<ISkillRegistry>();
@@ -247,17 +276,21 @@ public partial class App : Application
 
     /// <summary>
     /// Process incoming channel messages with the AI and return a response.
+    /// Uses agent knowledge if a default agent is configured.
     /// </summary>
     private async Task<string> ProcessChannelMessageAsync(Core.Models.ChannelMessage message)
     {
         var debugService = _host.Services.GetRequiredService<IDebugService>();
+        var totalStopwatch = System.Diagnostics.Stopwatch.StartNew();
+        var stepStopwatch = System.Diagnostics.Stopwatch.StartNew();
 
         try
         {
-            debugService.Info("Channel", $"Processing message from {message.SenderName}",
-                $"Channel: {message.ChannelType}, Content: {message.Content}");
+            debugService.Info("WhatsApp", $"[START] Processing message from {message.SenderName}",
+                $"Content: {message.Content}");
 
-            // Get LLM service
+            // Step 1: Initialize LLM service
+            stepStopwatch.Restart();
             var llmFactory = _host.Services.GetRequiredService<ILLMServiceFactory>();
             var service = llmFactory.GetService(Core.Models.LLMProviderType.Ollama);
 
@@ -269,26 +302,98 @@ public partial class App : Application
 
             if (service == null)
             {
+                debugService.Error("WhatsApp", "LLM service unavailable");
                 return "Sorry, I'm having trouble connecting to my brain. Please try again later.";
             }
+            debugService.Info("WhatsApp", $"[Step 1] LLM service ready", $"Time: {stepStopwatch.ElapsedMilliseconds}ms");
 
-            // Get settings
+            // Step 2: Get settings and model
+            stepStopwatch.Restart();
             using var scope = _host.Services.CreateScope();
             var settingsService = scope.ServiceProvider.GetRequiredService<ISettingsService>();
             var settings = await settingsService.GetDefaultLLMSettingsAsync();
 
-            // Use a suitable model
             var models = await service.GetAvailableModelsAsync();
             settings.Model = models.FirstOrDefault() ?? "qwen2.5:3b";
+            debugService.Info("WhatsApp", $"[Step 2] Model selected: {settings.Model}", $"Time: {stepStopwatch.ElapsedMilliseconds}ms");
 
-            // Build system prompt for channel context
-            settings.SystemPrompt = $@"You are ArtaloBot, a helpful AI assistant responding via {message.ChannelType}.
+            // Step 3: Search knowledge base (Vector search)
+            stepStopwatch.Restart();
+            var agentService = _host.Services.GetRequiredService<IAgentService>();
+            debugService.Info("WhatsApp", "[Step 3] Starting vector search...");
+
+            var searchResults = await agentService.SearchChannelKnowledgeAsync(
+                message.ChannelType,
+                message.Content,
+                maxResults: 10);
+            var vectorSearchTime = stepStopwatch.ElapsedMilliseconds;
+
+            var knowledgeContext = "";
+            var assignedAgents = await agentService.GetAgentsForChannelAsync(message.ChannelType);
+
+            if (searchResults.Count > 0)
+            {
+                debugService.Success("WhatsApp",
+                    $"[Step 3] Vector search complete: {searchResults.Count} chunks found",
+                    $"Time: {vectorSearchTime}ms | Best match: {searchResults[0].Similarity:F3} from {searchResults[0].AgentName}");
+
+                knowledgeContext = "\n\n--- RELEVANT KNOWLEDGE ---\n";
+                foreach (var result in searchResults)
+                {
+                    knowledgeContext += $"\n[From {result.AgentName} - {result.DocumentName}]\n{result.Chunk.Content}\n";
+                }
+                knowledgeContext += "\n--- END KNOWLEDGE ---\n";
+            }
+            else
+            {
+                debugService.Warning("WhatsApp", $"[Step 3] No relevant knowledge found",
+                    $"Time: {vectorSearchTime}ms | Assigned agents: {assignedAgents.Count}");
+            }
+
+            // Step 4: Build system prompt
+            stepStopwatch.Restart();
+            var systemPrompt = $@"You are ArtaloBot, a helpful AI assistant responding via {message.ChannelType}.
 You are chatting with {message.SenderName}.
 Keep your responses concise and friendly - this is a messaging app.
 Don't use markdown formatting as it won't render in chat apps.
-Be helpful and conversational.";
+Be helpful and conversational.
+You can respond in Hindi, English, or Hinglish based on the user's language.";
 
-            // Create message list
+            if (assignedAgents.Count > 0)
+            {
+                var agentNames = string.Join(", ", assignedAgents.Select(a => a.Name));
+                debugService.Info("WhatsApp", $"[Step 4] Using agents: {agentNames}");
+
+                var combinedPrompts = assignedAgents
+                    .Where(a => !string.IsNullOrWhiteSpace(a.SystemPrompt))
+                    .Select(a => $"[{a.Name}]: {a.SystemPrompt}")
+                    .ToList();
+
+                if (combinedPrompts.Count > 0)
+                {
+                    systemPrompt += "\n\nYou have access to the following specialized knowledge:\n" +
+                                    string.Join("\n\n", combinedPrompts);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(knowledgeContext))
+            {
+                systemPrompt += $@"
+
+Use the following knowledge to answer questions accurately:
+{knowledgeContext}
+
+Important: Base your answers on the provided knowledge when relevant. If you don't find the answer in the knowledge, say so clearly.";
+            }
+
+            settings.SystemPrompt = systemPrompt;
+            debugService.Info("WhatsApp", $"[Step 4] Prompt built",
+                $"Time: {stepStopwatch.ElapsedMilliseconds}ms | Prompt length: {systemPrompt.Length} chars");
+
+            // Step 5: Generate AI response
+            stepStopwatch.Restart();
+            debugService.Info("WhatsApp", "[Step 5] Generating AI response...");
+
             var messages = new List<Core.Models.ChatMessage>
             {
                 new()
@@ -298,17 +403,23 @@ Be helpful and conversational.";
                 }
             };
 
-            // Get response (non-streaming for simplicity)
             var response = await service.SendMessageAsync(messages, settings);
+            var llmTime = stepStopwatch.ElapsedMilliseconds;
 
-            debugService.Success("Channel", "AI response generated",
-                response.Length > 100 ? response[..100] + "..." : response);
+            totalStopwatch.Stop();
+            debugService.Success("WhatsApp",
+                $"[COMPLETE] Response generated in {totalStopwatch.ElapsedMilliseconds}ms",
+                $"Vector: {vectorSearchTime}ms | LLM: {llmTime}ms | Response: {response.Length} chars");
+
+            debugService.Info("WhatsApp", "Response preview",
+                response.Length > 200 ? response[..200] + "..." : response);
 
             return response;
         }
         catch (Exception ex)
         {
-            debugService.Error("Channel", "Failed to process message", ex.Message);
+            totalStopwatch.Stop();
+            debugService.Error("WhatsApp", $"[ERROR] Failed after {totalStopwatch.ElapsedMilliseconds}ms", ex.Message);
             return "Sorry, I encountered an error processing your message. Please try again.";
         }
     }
@@ -413,6 +524,90 @@ Be helpful and conversational.";
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Error ensuring MCPServers table exists: {ex.Message}");
+        }
+    }
+
+    private static async Task EnsureAgentsTablesExistAsync(AppDbContext dbContext)
+    {
+        try
+        {
+            var connection = dbContext.Database.GetDbConnection();
+            if (connection.State != System.Data.ConnectionState.Open)
+                await connection.OpenAsync();
+
+            // Create all agent-related tables if they don't exist (check each independently)
+            using var createCommand = connection.CreateCommand();
+            createCommand.CommandText = """
+                CREATE TABLE IF NOT EXISTS Agents (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Name TEXT NOT NULL,
+                    Description TEXT,
+                    SystemPrompt TEXT,
+                    Icon TEXT DEFAULT 'Robot',
+                    IsEnabled INTEGER NOT NULL DEFAULT 1,
+                    IsDefault INTEGER NOT NULL DEFAULT 0,
+                    CreatedAt TEXT NOT NULL,
+                    UpdatedAt TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS IX_Agents_Name ON Agents (Name);
+                CREATE INDEX IF NOT EXISTS IX_Agents_IsEnabled ON Agents (IsEnabled);
+                CREATE INDEX IF NOT EXISTS IX_Agents_IsDefault ON Agents (IsDefault);
+
+                CREATE TABLE IF NOT EXISTS AgentDocuments (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    AgentId INTEGER NOT NULL,
+                    FileName TEXT NOT NULL,
+                    FilePath TEXT NOT NULL,
+                    FileType TEXT,
+                    FileSize INTEGER NOT NULL DEFAULT 0,
+                    Status INTEGER NOT NULL DEFAULT 0,
+                    ErrorMessage TEXT,
+                    ChunkCount INTEGER NOT NULL DEFAULT 0,
+                    UploadedAt TEXT NOT NULL,
+                    ProcessedAt TEXT,
+                    FOREIGN KEY (AgentId) REFERENCES Agents(Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS IX_AgentDocuments_AgentId ON AgentDocuments (AgentId);
+                CREATE INDEX IF NOT EXISTS IX_AgentDocuments_Status ON AgentDocuments (Status);
+
+                CREATE TABLE IF NOT EXISTS AgentChunks (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    AgentId INTEGER NOT NULL,
+                    DocumentId INTEGER NOT NULL,
+                    Content TEXT NOT NULL,
+                    EmbeddingJson TEXT NOT NULL,
+                    EmbeddingModel TEXT,
+                    ChunkIndex INTEGER NOT NULL DEFAULT 0,
+                    Metadata TEXT,
+                    CreatedAt TEXT NOT NULL,
+                    FOREIGN KEY (AgentId) REFERENCES Agents(Id) ON DELETE CASCADE,
+                    FOREIGN KEY (DocumentId) REFERENCES AgentDocuments(Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS IX_AgentChunks_AgentId ON AgentChunks (AgentId);
+                CREATE INDEX IF NOT EXISTS IX_AgentChunks_DocumentId ON AgentChunks (DocumentId);
+
+                CREATE TABLE IF NOT EXISTS ChannelAgentAssignments (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ChannelType INTEGER NOT NULL,
+                    AgentId INTEGER NOT NULL,
+                    Priority INTEGER NOT NULL DEFAULT 0,
+                    IsEnabled INTEGER NOT NULL DEFAULT 1,
+                    AssignedAt TEXT NOT NULL,
+                    FOREIGN KEY (AgentId) REFERENCES Agents(Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS IX_ChannelAgentAssignments_ChannelType ON ChannelAgentAssignments (ChannelType);
+                CREATE INDEX IF NOT EXISTS IX_ChannelAgentAssignments_AgentId ON ChannelAgentAssignments (AgentId);
+
+                -- Add unique constraint if not exists (SQLite doesn't support IF NOT EXISTS for constraints)
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_ChannelAgentAssignments_Unique ON ChannelAgentAssignments (ChannelType, AgentId);
+                """;
+            await createCommand.ExecuteNonQueryAsync();
+
+            await connection.CloseAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error ensuring Agents tables exist: {ex.Message}");
         }
     }
 }

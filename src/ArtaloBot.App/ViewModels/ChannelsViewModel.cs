@@ -13,6 +13,7 @@ public partial class ChannelsViewModel : ObservableObject
 {
     private readonly IChannelManager? _channelManager;
     private readonly ISettingsService _settingsService;
+    private readonly IAgentService? _agentService;
     private readonly IDebugService? _debugService;
     private readonly WhatsAppChannel? _whatsAppChannel;
 
@@ -24,6 +25,10 @@ public partial class ChannelsViewModel : ObservableObject
 
     [ObservableProperty]
     private string _statusMessage = string.Empty;
+
+    // All available agents for assignment
+    [ObservableProperty]
+    private ObservableCollection<AgentAssignmentViewModel> _availableAgents = [];
 
     // WhatsApp specific
     [ObservableProperty]
@@ -41,10 +46,12 @@ public partial class ChannelsViewModel : ObservableObject
     public ChannelsViewModel(
         ISettingsService settingsService,
         IChannelManager? channelManager = null,
+        IAgentService? agentService = null,
         IDebugService? debugService = null)
     {
         _settingsService = settingsService;
         _channelManager = channelManager;
+        _agentService = agentService;
         _debugService = debugService;
 
         // Get WhatsApp channel from manager
@@ -125,13 +132,120 @@ public partial class ChannelsViewModel : ObservableObject
         SelectedChannel = Channels.FirstOrDefault();
     }
 
+    public async Task LoadAgentsAsync()
+    {
+        if (_agentService == null) return;
+
+        try
+        {
+            var agents = await _agentService.GetAllAgentsAsync();
+
+            AvailableAgents.Clear();
+            foreach (var agent in agents.Where(a => a.IsEnabled))
+            {
+                AvailableAgents.Add(new AgentAssignmentViewModel
+                {
+                    AgentId = agent.Id,
+                    AgentName = agent.Name,
+                    AgentIcon = agent.Icon,
+                    DocumentCount = agent.Documents.Count
+                });
+            }
+
+            // Load assignments for each channel
+            foreach (var channel in Channels.Where(c => !c.IsComingSoon))
+            {
+                await LoadChannelAssignmentsAsync(channel);
+            }
+
+            _debugService?.Info("ChannelsVM", $"Loaded {agents.Count} agents for assignment");
+        }
+        catch (Exception ex)
+        {
+            _debugService?.Error("ChannelsVM", "Failed to load agents", ex.Message);
+        }
+    }
+
+    private async Task LoadChannelAssignmentsAsync(ChannelConfigViewModel channel)
+    {
+        if (_agentService == null) return;
+
+        try
+        {
+            var assignments = await _agentService.GetChannelAssignmentsAsync(channel.Type);
+            var assignedIds = assignments.Select(a => a.AgentId).ToHashSet();
+
+            channel.AssignedAgents.Clear();
+            foreach (var assignment in assignments)
+            {
+                if (assignment.Agent != null)
+                {
+                    channel.AssignedAgents.Add(new AgentAssignmentViewModel
+                    {
+                        AgentId = assignment.AgentId,
+                        AgentName = assignment.Agent.Name,
+                        AgentIcon = assignment.Agent.Icon,
+                        DocumentCount = assignment.Agent.Documents.Count,
+                        IsAssigned = true,
+                        Priority = assignment.Priority
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _debugService?.Error("ChannelsVM", $"Failed to load assignments for {channel.Name}", ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task AssignAgent(AgentAssignmentViewModel agent)
+    {
+        if (_agentService == null || SelectedChannel == null) return;
+
+        try
+        {
+            var priority = SelectedChannel.AssignedAgents.Count;
+            await _agentService.AssignAgentToChannelAsync(agent.AgentId, SelectedChannel.Type, priority);
+
+            agent.IsAssigned = true;
+            agent.Priority = priority;
+            SelectedChannel.AssignedAgents.Add(agent);
+
+            StatusMessage = $"Assigned '{agent.AgentName}' to {SelectedChannel.Name}";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task UnassignAgent(AgentAssignmentViewModel agent)
+    {
+        if (_agentService == null || SelectedChannel == null) return;
+
+        try
+        {
+            await _agentService.UnassignAgentFromChannelAsync(agent.AgentId, SelectedChannel.Type);
+
+            agent.IsAssigned = false;
+            SelectedChannel.AssignedAgents.Remove(agent);
+
+            StatusMessage = $"Removed '{agent.AgentName}' from {SelectedChannel.Name}";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
     private void OnQrCodeGenerated(object? sender, string qrCodeBase64)
     {
         Application.Current?.Dispatcher?.Invoke(() =>
         {
             try
             {
-                // Convert base64 data URL to BitmapImage
                 var base64Data = qrCodeBase64.Replace("data:image/png;base64,", "");
                 var imageBytes = Convert.FromBase64String(base64Data);
 
@@ -202,9 +316,6 @@ public partial class ChannelsViewModel : ObservableObject
     private void OnMessageReceived(object? sender, ChannelMessage message)
     {
         _debugService?.Info("WhatsApp", $"Message received from {message.SenderName}", message.Content);
-
-        // This will be handled by the chat system
-        // The ChannelManager forwards messages to the AI
     }
 
     [RelayCommand]
@@ -263,7 +374,6 @@ public partial class ChannelsViewModel : ObservableObject
         try
         {
             await _whatsAppChannel.ConnectAsync(new Dictionary<string, string>());
-            // Status updates will come via events
         }
         catch (Exception ex)
         {
@@ -311,7 +421,6 @@ public partial class ChannelsViewModel : ObservableObject
     [RelayCommand]
     private void RefreshQrCode()
     {
-        // Request a new QR code
         if (_whatsAppChannel != null)
         {
             StatusMessage = "Refreshing QR code...";
@@ -340,6 +449,9 @@ public partial class ChannelConfigViewModel : ObservableObject
 
     [ObservableProperty]
     private ObservableCollection<ConfigFieldViewModel> _configurationFields = [];
+
+    [ObservableProperty]
+    private ObservableCollection<AgentAssignmentViewModel> _assignedAgents = [];
 }
 
 public partial class ConfigFieldViewModel : ObservableObject
@@ -352,4 +464,18 @@ public partial class ConfigFieldViewModel : ObservableObject
 
     [ObservableProperty]
     private string _value = string.Empty;
+}
+
+public partial class AgentAssignmentViewModel : ObservableObject
+{
+    public int AgentId { get; set; }
+    public string AgentName { get; set; } = string.Empty;
+    public string AgentIcon { get; set; } = "Robot";
+    public int DocumentCount { get; set; }
+
+    [ObservableProperty]
+    private bool _isAssigned;
+
+    [ObservableProperty]
+    private int _priority;
 }

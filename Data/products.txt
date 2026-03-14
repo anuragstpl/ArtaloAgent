@@ -1,0 +1,101 @@
+ProductID,ProductName,Category,Brand,Weight/Volume,Unit,PriceINR,Description
+1,Basmati Rice,Grains,India Gate,5,kg,650,Premium long grain aromatic rice
+2,Toor Dal,Pulses,Tata Sampann,1,kg,180,Split pigeon peas used in Indian cooking
+3,Moong Dal,Pulses,24 Mantra,1,kg,160,Split yellow moong lentils
+4,Chana Dal,Pulses,Fortune,1,kg,140,Bengal gram split dal
+5,Urad Dal,Pulses,Organic India,1,kg,170,Split black gram dal
+6,Masoor Dal,Pulses,Organic Tattva,1,kg,150,Red lentils used in soups and curries
+7,Whole Wheat Flour,Atta,Aashirvaad,5,kg,320,Premium whole wheat flour for chapati
+8,Maida Flour,Flour,Pillsbury,1,kg,60,Refined wheat flour
+9,Rava/Sooji,Flour,24 Mantra,1,kg,55,Semolina used for upma and halwa
+10,Poha,Grains,MTR,500,g,45,Flattened rice flakes
+11,Vegetable Oil,Oil,Fortune,1,liter,180,Refined sunflower cooking oil
+12,Mustard Oil,Oil,Dhara,1,liter,210,Pure mustard cooking oil
+13,Coconut Oil,Oil,Parachute,500,ml,190,Edible coconut oil
+14,Ghee,Dairy,Amul,500,g,320,Pure cow ghee
+15,Butter,Dairy,Amul,200,g,110,Salted butter
+16,Paneer,Dairy,Amul,200,g,95,Fresh cottage cheese
+17,Milk,Dairy,Amul,1,liter,60,Full cream milk
+18,Curd,Dairy,Mother Dairy,400,g,45,Fresh yogurt
+19,Sugar,Sweeteners,Madhur,1,kg,55,Refined white sugar
+20,Jaggery,Sweeteners,Organic India,500,g,70,Natural cane jaggery
+21,Tea,Tea & Coffee,Tata Tea Gold,1,kg,540,Premium black tea leaves
+22,Coffee,Tea & Coffee,Bru,200,g,320,Instant coffee powder
+23,Green Tea,Tea & Coffee,Lipton,100,g,280,Green tea bags
+24,Turmeric Powder,Spices,Everest,200,g,60,Pure haldi powder
+25,Red Chilli Powder,Spices,MDH,200,g,75,Spicy red chilli powder
+26,Coriander Powder,Spices,Everest,200,g,70,Dhaniya powder
+27,Cumin Seeds,Spices,Tata Sampann,100,g,65,Jeera seeds
+28,Mustard Seeds,Spices,24 Mantra,100,g,45,Rai seeds
+29,Garam Masala,Spices,MDH,100,g,85,Traditional spice blend
+30,Black Pepper,Spices,Everest,100,g,95,Whole black peppercorns
+31,Cardamom,Spices,Organic India,50,g,180,Green elaichi pods
+32,Cloves,Spices,Everest,50,g,120,Whole clove spice
+33,Cinnamon,Spices,Tata Sampann,50,g,110,Cinnamon sticks
+34,Bay Leaves,Spices,Everest,25,g,45,Dried bay leaves
+35,Maggi Noodles,Instant Food,Nestle,70,g,14,Instant masala noodles
+36,Pasta,Instant Food,Borges,500,g,120,Durum wheat pasta
+37,Oats,Breakfast,Quaker,1,kg,220,Healthy rolled oats
+38,Cornflakes,Breakfast,Kellogg's,500,g,200,Crunchy corn breakfast cereal
+39,Peanut Butter,Spreads,Pintola,500,g,320,Natural peanut butter
+40,Jam,Spreads,Kissan,500,g,180,Mixed fruit jam
+41,Tomato Ketchup,Sauces,Kissan,1,kg,140,Tomato ketchup sauce
+42,Soy Sauce,Sauces,Ching's,200,ml,85,Soy sauce for Asian cooking
+43,Chilli Sauce,Sauces,Ching's,200,ml,80,Red chilli sauce
+44,Vinegar,Sauces,Weikfield,500,ml,60,White vinegar
+45,Pickle,Miscellaneous,Mother's Recipe,500,g,160,Mango pickle
+46,Potato Chips,Snacks,Lay's,52,g,20,Classic salted potato chips
+47,Biscuits,Snacks,Parle-G,800,g,120,Glucose biscuits
+48,Marie Biscuits,Snacks,Britannia,250,g,40,Light tea biscuits
+49,Cashew Nuts,Dry Fruits,Happilo,200,g,240,Premium cashew nuts
+50,Almonds,Dry Fruits,Happilo,200,g,260,Whole almonds
+51,Raisins,Dry Fruits,24 Mantra,200,g,140,Seedless raisins
+52,Dates,Dry Fruits,Lion,500,g,180,Premium dates
+53,Chickpeas,Pulses,Tata Sampann,1,kg,120,Whole chana
+54,Rajma Beans,Pulses,Organic Tattva,1,kg,180,Red kidney beans
+55,Black Chana,Pulses,24 Mantra,1,kg,130,Whole black chickpeas
+56,Green Moong,Pulses,Tata Sampann,1,kg,150,Whole green gram
+57,Idli Rice,Grains,Ponni,5,kg,420,Short grain rice for idli batter
+58,Dosa Batter,Ready Food,iD Fresh,1,kg,110,Ready dosa batter
+59,Sambar Powder,Spices,MTR,200,g,90,South Indian sambar masala
+60,Rasam Powder,Spices,MTR,200,g,85,Rasam spice powder
+61,Bread,Bakery,Britannia,400,g,50,White sandwich bread
+62,Brown Bread,Bakery,Britannia,400,g,55,Whole wheat bread
+63,Buns,Bakery,Britannia,6,pcs,40,Burger buns
+64,Cake,Bakery,Monginis,500,g,350,Chocolate cake
+65,Ice Cream,Frozen,Amul,1,liter,180,Vanilla ice cream
+66,Frozen Peas,Frozen,Safal,500,g,120,Frozen green peas
+67,Frozen Corn,Frozen,Safal,500,g,110,Frozen sweet corn
+68,Paneer Butter Masala,Ready Food,MTR,300,g,150,Ready to eat paneer curry
+69,Dal Makhani,Ready Food,Haldiram's,300,g,140,Ready dal makhani
+70,Chole Masala,Ready Food,Haldiram's,300,g,140,Ready chole curry
+71,Khichdi Mix,Ready Food,MTR,200,g,80,Instant khichdi mix
+72,Upma Mix,Ready Food,MTR,200,g,75,Instant upma mix
+73,Popcorn,Snacks,Act II,100,g,40,Microwave popcorn
+74,Energy Drink,Beverages,Red Bull,250,ml,125,Energy drink
+75,Soft Drink,Beverages,Coca Cola,750,ml,40,Carbonated soft drink
+76,Orange Juice,Beverages,Real,1,liter,110,Packaged fruit juice
+77,Mango Juice,Beverages,Frooti,1,liter,95,Mango drink
+78,Banana,Fruits,Local Farm,1,dozen,60,Fresh bananas
+79,Apple,Fruits,Washington,1,kg,180,Imported apples
+80,Orange,Fruits,Nagpur,1,kg,120,Fresh oranges
+81,Tomato,Vegetables,Local Farm,1,kg,40,Fresh tomatoes
+82,Potato,Vegetables,Local Farm,1,kg,30,Fresh potatoes
+83,Onion,Vegetables,Local Farm,1,kg,35,Fresh onions
+84,Carrot,Vegetables,Local Farm,1,kg,50,Fresh carrots
+85,Cabbage,Vegetables,Local Farm,1,kg,40,Fresh cabbage
+86,Cauliflower,Vegetables,Local Farm,1,kg,55,Fresh cauliflower
+87,Spinach,Vegetables,Local Farm,500,g,25,Fresh spinach leaves
+88,Coriander Leaves,Vegetables,Local Farm,100,g,10,Fresh coriander
+89,Green Chillies,Vegetables,Local Farm,100,g,15,Spicy green chillies
+90,Ginger,Vegetables,Local Farm,250,g,30,Fresh ginger root
+91,Garlic,Vegetables,Local Farm,250,g,35,Fresh garlic cloves
+92,Lemon,Fruits,Local Farm,1,dozen,70,Fresh lemons
+93,Honey,Sweeteners,Dabur,500,g,280,Pure natural honey
+94,Chocolate,Snacks,Cadbury Dairy Milk,100,g,90,Milk chocolate bar
+95,Energy Bar,Snacks,RiteBite,50,g,45,Healthy protein bar
+96,Protein Powder,Health,MuscleBlaze,1,kg,1800,Whey protein supplement
+97,Multigrain Atta,Flour,Aashirvaad,5,kg,350,Healthy multigrain flour
+98,Besan Flour,Flour,Fortune,1,kg,120,Gram flour
+99,Tamarind Paste,Spices,Dabur,200,g,70,Tamarind concentrate
+100,Coconut Milk,Cooking Essentials,Dabur Hommade,200,ml,55,Canned coconut milk

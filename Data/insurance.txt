@@ -1,0 +1,26 @@
+PolicyID,PolicyName,PlanNumber,PolicyType,MinEntryAge,MaxEntryAge,MinSumAssured,MaxSumAssured,PolicyTerm,PremiumPaymentTerm,MaturityAge,Description
+1,New Jeevan Anand,715,Endowment + Whole Life,18,50,200000,Unlimited,15-35 Years,Regular,100,Endowment plan with lifelong risk cover even after maturity
+2,Jeevan Lakshya,733,Endowment,18,50,100000,Unlimited,13-25 Years,Regular,75,Designed for family financial security and child education
+3,Jeevan Labh,736,Limited Premium Endowment,8,59,200000,Unlimited,16/21/25 Years,Limited,75,Savings plan with limited premium payment
+4,New Tech Term,854,Term Insurance,18,65,500000,Unlimited,10-40 Years,Regular,80,Pure protection plan with flexible premium options
+5,Jeevan Utsav,871,Whole Life Insurance,0,65,200000,Unlimited,Whole Life,Limited,100,Guaranteed annual payout after premium payment term
+6,Index Plus,873,ULIP,0,60,100000,Unlimited,10-25 Years,Regular,75,Market linked ULIP with index fund investments
+7,Amritbaal,874,Child Plan,0,13,200000,Unlimited,5-25 Years,Regular,25,Child savings plan with guaranteed additions
+8,Bima Jyoti,760,Non-Linked Savings,0,60,100000,Unlimited,15-20 Years,Regular,75,Savings plan with guaranteed additions
+9,Saral Jeevan Bima,859,Term Insurance,18,65,500000,2500000,5-40 Years,Regular,70,Simple standard term insurance policy
+10,New Jeevan Shanti,858,Pension Plan,30,79,150000,Unlimited,Deferred,Single Premium,Lifetime,Single premium deferred annuity plan
+11,Jeevan Umang,945,Whole Life Endowment,90 Days,55,200000,Unlimited,30 Years,Regular,100,Whole life income plan with annual survival benefits
+12,Aadhaar Stambh,943,Endowment,8,55,75000,300000,10-20 Years,Regular,70,Special plan designed for male Aadhaar holders
+13,Aadhaar Shila,944,Endowment,8,55,75000,300000,10-20 Years,Regular,70,Special plan designed for female Aadhaar holders
+14,Micro Bachat,951,Micro Insurance,18,55,50000,200000,10-15 Years,Regular,70,Low premium micro insurance plan
+15,Bima Ratna,864,Non Linked Savings,5,55,500000,Unlimited,15 Years,Regular,75,High value savings plan with periodic payouts
+16,Dhan Rekha,863,Endowment,8,55,200000,Unlimited,20-40 Years,Regular,80,Guaranteed additions and life cover
+17,Jeevan Azad,868,Limited Premium Endowment,0,50,200000,5000000,15-20 Years,Limited,75,Limited premium payment savings plan
+18,LIC Cancer Cover,905,Health Insurance,20,65,100000,5000000,10-30 Years,Regular,75,Cancer protection insurance policy
+19,Accidental Death Benefit Rider,806,Rider,18,65,100000,5000000,Same as Base Policy,Regular,75,Additional accidental death benefit rider
+20,New Jeevan Amar,855,Term Insurance,18,65,2500000,Unlimited,10-40 Years,Regular,80,Large coverage pure term insurance
+21,Single Premium Endowment,817,Endowment,18,65,50000,Unlimited,10-25 Years,Single Premium,75,Endowment plan with one-time premium
+22,Jeevan Tarun,934,Child Plan,0,12,75000,Unlimited,25 Years,Regular,25,Child education and financial security plan
+23,Bima Shree,848,Money Back,8,55,1000000,Unlimited,14-20 Years,Limited,70,High net worth money back policy
+24,Jeevan Shiromani,947,Money Back,18,55,1000000,Unlimited,14-20 Years,Limited,70,High value money back savings plan
+25,Pradhan Mantri Jeevan Jyoti Bima Yojana,PMJJBY,Government Term Plan,18,50,200000,200000,1 Year,Annual,55,Government backed low cost life insurance plan

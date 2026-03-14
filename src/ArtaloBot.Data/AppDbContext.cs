@@ -13,6 +13,7 @@ public class AppDbContext : DbContext
     public DbSet<Agent> Agents { get; set; } = null!;
     public DbSet<AgentDocument> AgentDocuments { get; set; } = null!;
     public DbSet<AgentChunk> AgentChunks { get; set; } = null!;
+    public DbSet<ChannelAgentAssignment> ChannelAgentAssignments { get; set; } = null!;
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -126,6 +127,19 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.Document)
                 .WithMany()
                 .HasForeignKey(e => e.DocumentId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ChannelAgentAssignment>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.ChannelType);
+            entity.HasIndex(e => e.AgentId);
+            entity.HasIndex(e => new { e.ChannelType, e.AgentId }).IsUnique();
+
+            entity.HasOne(e => e.Agent)
+                .WithMany()
+                .HasForeignKey(e => e.AgentId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

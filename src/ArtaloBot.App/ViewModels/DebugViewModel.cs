@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Text;
 using System.Windows;
 using ArtaloBot.Core.Interfaces;
 using ArtaloBot.Services.Debug;
@@ -58,5 +59,32 @@ public partial class DebugViewModel : ObservableObject
         {
             _debugService.Clear();
         });
+    }
+
+    [RelayCommand]
+    private void CopyAll()
+    {
+        var sb = new StringBuilder();
+        foreach (var entry in Entries)
+        {
+            sb.AppendLine($"[{entry.TimestampFormatted}] [{entry.Level}] [{entry.Category}] {entry.Message}");
+            if (!string.IsNullOrEmpty(entry.Details))
+            {
+                sb.AppendLine($"    Details: {entry.Details}");
+            }
+        }
+
+        if (sb.Length > 0)
+        {
+            try
+            {
+                Clipboard.SetText(sb.ToString());
+                _debugService.Success("Debug", "Copied all log entries to clipboard");
+            }
+            catch (Exception ex)
+            {
+                _debugService.Error("Debug", "Failed to copy to clipboard", ex.Message);
+            }
+        }
     }
 }

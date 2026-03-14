@@ -34,6 +34,7 @@ public partial class MainViewModel : ObservableObject
     public DebugViewModel DebugViewModel { get; }
     public MCPViewModel MCPViewModel { get; }
     public ChannelsViewModel ChannelsViewModel { get; }
+    public AgentsViewModel AgentsViewModel { get; }
 
     public MainViewModel(
         INavigationService navigationService,
@@ -44,7 +45,8 @@ public partial class MainViewModel : ObservableObject
         SessionsViewModel sessionsViewModel,
         DebugViewModel debugViewModel,
         MCPViewModel mcpViewModel,
-        ChannelsViewModel channelsViewModel)
+        ChannelsViewModel channelsViewModel,
+        AgentsViewModel agentsViewModel)
     {
         _navigationService = navigationService;
         _themeService = themeService;
@@ -56,6 +58,7 @@ public partial class MainViewModel : ObservableObject
         DebugViewModel = debugViewModel;
         MCPViewModel = mcpViewModel;
         ChannelsViewModel = channelsViewModel;
+        AgentsViewModel = agentsViewModel;
 
         _currentView = chatViewModel;
         _isDarkTheme = _themeService.IsDarkTheme;
@@ -75,6 +78,8 @@ public partial class MainViewModel : ObservableObject
             CurrentView = MCPViewModel;
         else if (viewModelType == typeof(ChannelsViewModel))
             CurrentView = ChannelsViewModel;
+        else if (viewModelType == typeof(AgentsViewModel))
+            CurrentView = AgentsViewModel;
     }
 
     [RelayCommand]
@@ -91,10 +96,12 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void NavigateToChat()
+    private async Task NavigateToChat()
     {
         CurrentView = ChatViewModel;
         SelectedNavIndex = 0;
+        // Refresh agents in case they were added/modified
+        await ChatViewModel.LoadAvailableAgentsAsync();
     }
 
     [RelayCommand]
@@ -116,6 +123,15 @@ public partial class MainViewModel : ObservableObject
     {
         CurrentView = ChannelsViewModel;
         SelectedNavIndex = 3;
+    }
+
+    [RelayCommand]
+    private async Task NavigateToAgents()
+    {
+        CurrentView = AgentsViewModel;
+        SelectedNavIndex = 4;
+        // Load agents when navigating to agents view
+        await AgentsViewModel.LoadAgentsAsync();
     }
 
     [RelayCommand]

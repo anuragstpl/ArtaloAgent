@@ -15,6 +15,7 @@ public partial class MainWindow : Window
             await viewModel.SessionsViewModel.LoadSessionsAsync();
             await viewModel.SettingsViewModel.LoadSettingsAsync();
             await viewModel.ChatViewModel.LoadAvailableModelsAsync();
+            await viewModel.ChatViewModel.LoadAvailableAgentsAsync();
         };
     }
 }

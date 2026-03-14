@@ -29,6 +29,13 @@ public interface IAgentService
     // Stats
     Task<int> GetTotalChunksAsync(int agentId);
     Task<int> GetTotalDocumentsAsync(int agentId);
+
+    // Channel-Agent Assignments
+    Task<List<ChannelAgentAssignment>> GetChannelAssignmentsAsync(ChannelType channelType);
+    Task<List<Agent>> GetAgentsForChannelAsync(ChannelType channelType);
+    Task AssignAgentToChannelAsync(int agentId, ChannelType channelType, int priority = 0);
+    Task UnassignAgentFromChannelAsync(int agentId, ChannelType channelType);
+    Task<List<AgentSearchResult>> SearchChannelKnowledgeAsync(ChannelType channelType, string query, int maxResults = 10);
 }
 
 /// <summary>
@@ -53,8 +60,15 @@ public interface IDocumentProcessor
 
     /// <summary>
     /// Split text into chunks suitable for embedding.
+    /// Uses simple sentence-based chunking.
     /// </summary>
     List<DocumentChunk> ChunkText(string text, int chunkSize = 500, int overlap = 50);
+
+    /// <summary>
+    /// Split text into semantic chunks using LLM for better context preservation.
+    /// Identifies natural topic boundaries and groups related content.
+    /// </summary>
+    Task<List<DocumentChunk>> SemanticChunkTextAsync(string text, int targetChunkSize = 500, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Process a document: extract text, chunk it, and generate embeddings.
@@ -65,6 +79,12 @@ public interface IDocumentProcessor
         string filePath,
         IProgress<DocumentProcessingProgress>? progress = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Enable or disable semantic (LLM-based) chunking.
+    /// When enabled, documents will be chunked using LLM for better context preservation.
+    /// </summary>
+    bool UseSemanticChunking { get; set; }
 }
 
 /// <summary>
