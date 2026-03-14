@@ -7,6 +7,7 @@ using ArtaloBot.Core.Interfaces;
 using ArtaloBot.Data;
 using ArtaloBot.Data.Repositories;
 using ArtaloBot.Services.Agents;
+using ArtaloBot.Services.AgentSkills;
 using ArtaloBot.Services.Channels;
 using ArtaloBot.Services.LLM;
 using ArtaloBot.Services.Debug;
@@ -111,6 +112,15 @@ public partial class App : Application
             return new AgentService(dbFactory, documentProcessor, memoryService, debugService);
         });
 
+        // Agent Skill Service (email, webhooks, job scheduling)
+        services.AddSingleton<IAgentSkillService>(sp =>
+        {
+            var dbFactory = sp.GetRequiredService<IDbContextFactory<AppDbContext>>();
+            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+            var debugService = sp.GetRequiredService<IDebugService>();
+            return new AgentSkillService(dbFactory, httpClientFactory, debugService);
+        });
+
         // Skills
         services.AddSingleton<ISkillRegistry, SkillRegistry>();
         services.AddSingleton<CalculatorSkill>();
@@ -129,6 +139,24 @@ public partial class App : Application
             var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
             var debugService = sp.GetRequiredService<IDebugService>();
             return new WhatsAppChannel(httpClientFactory, debugService);
+        });
+        services.AddSingleton<TelegramChannel>(sp =>
+        {
+            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+            var debugService = sp.GetRequiredService<IDebugService>();
+            return new TelegramChannel(httpClientFactory, debugService);
+        });
+        services.AddSingleton<DiscordChannel>(sp =>
+        {
+            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+            var debugService = sp.GetRequiredService<IDebugService>();
+            return new DiscordChannel(httpClientFactory, debugService);
+        });
+        services.AddSingleton<SlackChannel>(sp =>
+        {
+            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+            var debugService = sp.GetRequiredService<IDebugService>();
+            return new SlackChannel(httpClientFactory, debugService);
         });
 
         // ViewModels
@@ -149,8 +177,9 @@ public partial class App : Application
         {
             var agentService = sp.GetRequiredService<IAgentService>();
             var documentProcessor = sp.GetRequiredService<IDocumentProcessor>();
+            var skillService = sp.GetRequiredService<IAgentSkillService>();
             var debugService = sp.GetRequiredService<IDebugService>();
-            return new AgentsViewModel(agentService, documentProcessor, debugService);
+            return new AgentsViewModel(agentService, documentProcessor, skillService, debugService);
         });
 
         // Services
@@ -188,6 +217,9 @@ public partial class App : Application
         // Register channel providers
         var channelManager = _host.Services.GetRequiredService<IChannelManager>() as ChannelManager;
         channelManager?.RegisterProvider(_host.Services.GetRequiredService<WhatsAppChannel>());
+        channelManager?.RegisterProvider(_host.Services.GetRequiredService<TelegramChannel>());
+        channelManager?.RegisterProvider(_host.Services.GetRequiredService<DiscordChannel>());
+        channelManager?.RegisterProvider(_host.Services.GetRequiredService<SlackChannel>());
 
         // Set up AI handler for channel messages
         if (channelManager != null)
@@ -352,38 +384,65 @@ public partial class App : Application
 
             // Step 4: Build system prompt
             stepStopwatch.Restart();
-            var systemPrompt = $@"You are ArtaloBot, a helpful AI assistant responding via {message.ChannelType}.
+            string systemPrompt;
+
+            if (searchResults.Count > 0 && !string.IsNullOrEmpty(knowledgeContext))
+            {
+                // We have knowledge - use knowledge-first prompt
+                var agentNames = string.Join(", ", assignedAgents.Select(a => a.Name));
+                debugService.Info("WhatsApp", $"[Step 4] Using knowledge-first mode with agents: {agentNames}");
+
+                systemPrompt = $@"You are a helpful AI assistant responding via {message.ChannelType} to {message.SenderName}.
+
+CRITICAL INSTRUCTION: You MUST answer ONLY from the knowledge provided below. Do NOT use your general knowledge.
+
+{knowledgeContext}
+
+RULES:
+1. ONLY answer using information from the knowledge above
+2. If the answer is in the knowledge, provide it directly and confidently
+3. If the answer is NOT in the knowledge, say: ""I don't have information about that in my knowledge base.""
+4. Keep responses concise - this is a chat app
+5. Don't use markdown formatting
+6. Respond in the same language as the user (Hindi, English, or Hinglish)
+7. Do NOT make up information that's not in the knowledge above";
+
+                // Add agent-specific system prompts if any
+                var combinedPrompts = assignedAgents
+                    .Where(a => !string.IsNullOrWhiteSpace(a.SystemPrompt))
+                    .Select(a => a.SystemPrompt)
+                    .ToList();
+
+                if (combinedPrompts.Count > 0)
+                {
+                    systemPrompt += "\n\nAdditional context:\n" + string.Join("\n", combinedPrompts);
+                }
+            }
+            else if (assignedAgents.Count > 0)
+            {
+                // Agents assigned but no knowledge found
+                debugService.Warning("WhatsApp", "[Step 4] Agents assigned but no relevant knowledge found");
+
+                systemPrompt = $@"You are ArtaloBot, a helpful AI assistant responding via {message.ChannelType}.
+You are chatting with {message.SenderName}.
+
+Note: I searched my knowledge base but couldn't find relevant information for this query.
+
+Keep your responses concise and friendly - this is a messaging app.
+Don't use markdown formatting as it won't render in chat apps.
+Be helpful and conversational.
+You can respond in Hindi, English, or Hinglish based on the user's language.
+If you're unsure about specific details, let the user know.";
+            }
+            else
+            {
+                // No agents assigned - general mode
+                systemPrompt = $@"You are ArtaloBot, a helpful AI assistant responding via {message.ChannelType}.
 You are chatting with {message.SenderName}.
 Keep your responses concise and friendly - this is a messaging app.
 Don't use markdown formatting as it won't render in chat apps.
 Be helpful and conversational.
 You can respond in Hindi, English, or Hinglish based on the user's language.";
-
-            if (assignedAgents.Count > 0)
-            {
-                var agentNames = string.Join(", ", assignedAgents.Select(a => a.Name));
-                debugService.Info("WhatsApp", $"[Step 4] Using agents: {agentNames}");
-
-                var combinedPrompts = assignedAgents
-                    .Where(a => !string.IsNullOrWhiteSpace(a.SystemPrompt))
-                    .Select(a => $"[{a.Name}]: {a.SystemPrompt}")
-                    .ToList();
-
-                if (combinedPrompts.Count > 0)
-                {
-                    systemPrompt += "\n\nYou have access to the following specialized knowledge:\n" +
-                                    string.Join("\n\n", combinedPrompts);
-                }
-            }
-
-            if (!string.IsNullOrEmpty(knowledgeContext))
-            {
-                systemPrompt += $@"
-
-Use the following knowledge to answer questions accurately:
-{knowledgeContext}
-
-Important: Base your answers on the provided knowledge when relevant. If you don't find the answer in the knowledge, say so clearly.";
             }
 
             settings.SystemPrompt = systemPrompt;
@@ -600,6 +659,22 @@ Important: Base your answers on the provided knowledge when relevant. If you don
 
                 -- Add unique constraint if not exists (SQLite doesn't support IF NOT EXISTS for constraints)
                 CREATE UNIQUE INDEX IF NOT EXISTS IX_ChannelAgentAssignments_Unique ON ChannelAgentAssignments (ChannelType, AgentId);
+
+                CREATE TABLE IF NOT EXISTS AgentSkills (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    AgentId INTEGER NOT NULL,
+                    SkillType INTEGER NOT NULL,
+                    Name TEXT NOT NULL,
+                    Description TEXT,
+                    ConfigJson TEXT DEFAULT '{}',
+                    IsEnabled INTEGER NOT NULL DEFAULT 1,
+                    IsTested INTEGER NOT NULL DEFAULT 0,
+                    CreatedAt TEXT NOT NULL,
+                    UpdatedAt TEXT NOT NULL,
+                    FOREIGN KEY (AgentId) REFERENCES Agents(Id) ON DELETE CASCADE
+                );
+                CREATE INDEX IF NOT EXISTS IX_AgentSkills_AgentId ON AgentSkills (AgentId);
+                CREATE INDEX IF NOT EXISTS IX_AgentSkills_SkillType ON AgentSkills (SkillType);
                 """;
             await createCommand.ExecuteNonQueryAsync();
 

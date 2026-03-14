@@ -13,38 +13,6 @@
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVis" />
         <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis" />
-
-        <!-- Markdown Viewer Style -->
-        <Style TargetType="FlowDocument" x:Key="MarkdownDocument">
-            <Setter Property="FontFamily" Value="Segoe UI" />
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
-            <Setter Property="PagePadding" Value="0" />
-        </Style>
-
-        <!-- Markdown Heading Styles -->
-        <Style TargetType="Paragraph" x:Key="Heading1Style">
-            <Setter Property="FontSize" Value="24" />
-            <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="Margin" Value="0,8,0,8" />
-        </Style>
-        <Style TargetType="Paragraph" x:Key="Heading2Style">
-            <Setter Property="FontSize" Value="20" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Margin" Value="0,6,0,6" />
-        </Style>
-        <Style TargetType="Paragraph" x:Key="Heading3Style">
-            <Setter Property="FontSize" Value="16" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Margin" Value="0,4,0,4" />
-        </Style>
-
-        <!-- Code Block Style -->
-        <Style TargetType="Section" x:Key="CodeBlockStyle">
-            <Setter Property="Background" Value="#1E1E1E" />
-            <Setter Property="Padding" Value="12" />
-            <Setter Property="Margin" Value="0,8,0,8" />
-        </Style>
     </UserControl.Resources>
 
     <Grid>

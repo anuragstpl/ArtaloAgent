@@ -391,6 +391,170 @@ public static class SkillPresetRegistry
             Arguments = "[\"-y\", \"@anthropic/mcp-server-puppeteer\"]",
             RequiredEnvVars = [],
             DocumentationUrl = "https://github.com/anthropics/anthropic-cookbook/tree/main/misc/mcp"
+        },
+
+        // Built-in Action Skills (no external process needed)
+        new SkillPreset
+        {
+            Id = "email-sender",
+            Name = "Email Sender",
+            Description = "Send emails via SMTP - notifications, reports, automated messages",
+            Category = "Communication",
+            Icon = "Email",
+            Command = "builtin:email",
+            Arguments = "[]",
+            RequiredEnvVars =
+            [
+                new SkillPresetEnvVar
+                {
+                    Key = "SMTP_HOST",
+                    DisplayName = "SMTP Host",
+                    Description = "SMTP server address (e.g., smtp.gmail.com)",
+                    Placeholder = "smtp.gmail.com",
+                    IsSecret = false
+                },
+                new SkillPresetEnvVar
+                {
+                    Key = "SMTP_PORT",
+                    DisplayName = "SMTP Port",
+                    Description = "SMTP port (587 for TLS, 465 for SSL)",
+                    Placeholder = "587",
+                    IsSecret = false
+                },
+                new SkillPresetEnvVar
+                {
+                    Key = "SMTP_USERNAME",
+                    DisplayName = "Username",
+                    Description = "SMTP login username (usually your email)",
+                    Placeholder = "your.email@gmail.com",
+                    IsSecret = false
+                },
+                new SkillPresetEnvVar
+                {
+                    Key = "SMTP_PASSWORD",
+                    DisplayName = "Password/App Password",
+                    Description = "SMTP password or app-specific password",
+                    Placeholder = "Enter your app password"
+                },
+                new SkillPresetEnvVar
+                {
+                    Key = "FROM_EMAIL",
+                    DisplayName = "From Email",
+                    Description = "Sender email address",
+                    Placeholder = "your.email@gmail.com",
+                    IsSecret = false
+                },
+                new SkillPresetEnvVar
+                {
+                    Key = "FROM_NAME",
+                    DisplayName = "From Name",
+                    Description = "Sender display name",
+                    Placeholder = "ArtaloBot",
+                    IsSecret = false
+                }
+            ],
+            SetupInstructions = "For Gmail, enable 2FA and create an App Password at https://myaccount.google.com/apppasswords"
+        },
+
+        new SkillPreset
+        {
+            Id = "webhook-caller",
+            Name = "Webhook Caller",
+            Description = "Call external APIs and webhooks - integrations, notifications, automations",
+            Category = "Automation",
+            Icon = "Webhook",
+            Command = "builtin:webhook",
+            Arguments = "[]",
+            RequiredEnvVars =
+            [
+                new SkillPresetEnvVar
+                {
+                    Key = "WEBHOOK_URL",
+                    DisplayName = "Webhook URL",
+                    Description = "The URL to call",
+                    Placeholder = "https://api.example.com/webhook",
+                    IsSecret = false
+                },
+                new SkillPresetEnvVar
+                {
+                    Key = "WEBHOOK_METHOD",
+                    DisplayName = "HTTP Method",
+                    Description = "GET, POST, PUT, DELETE",
+                    Placeholder = "POST",
+                    IsSecret = false
+                },
+                new SkillPresetEnvVar
+                {
+                    Key = "WEBHOOK_AUTH_TYPE",
+                    DisplayName = "Auth Type",
+                    Description = "None, Bearer, Basic, or ApiKey",
+                    Placeholder = "Bearer",
+                    IsSecret = false
+                },
+                new SkillPresetEnvVar
+                {
+                    Key = "WEBHOOK_AUTH_VALUE",
+                    DisplayName = "Auth Value",
+                    Description = "Token, credentials, or API key",
+                    Placeholder = "Enter your auth token"
+                },
+                new SkillPresetEnvVar
+                {
+                    Key = "WEBHOOK_BODY_TEMPLATE",
+                    DisplayName = "Body Template",
+                    Description = "JSON template with {{placeholders}}",
+                    Placeholder = "{\"message\": \"{{message}}\"}",
+                    IsSecret = false
+                }
+            ],
+            SetupInstructions = "Use {{placeholders}} in the body template for dynamic values"
+        },
+
+        new SkillPreset
+        {
+            Id = "job-scheduler",
+            Name = "Job Scheduler",
+            Description = "Schedule recurring tasks - daily reports, reminders, automated actions",
+            Category = "Automation",
+            Icon = "CalendarClock",
+            Command = "builtin:scheduler",
+            Arguments = "[]",
+            RequiredEnvVars =
+            [
+                new SkillPresetEnvVar
+                {
+                    Key = "CRON_EXPRESSION",
+                    DisplayName = "Schedule (Cron)",
+                    Description = "Cron expression (minute hour day month dayOfWeek)",
+                    Placeholder = "0 9 * * *",
+                    IsSecret = false
+                },
+                new SkillPresetEnvVar
+                {
+                    Key = "JOB_TYPE",
+                    DisplayName = "Job Type",
+                    Description = "SendEmail, CallWebhook, or SendMessage",
+                    Placeholder = "SendMessage",
+                    IsSecret = false
+                },
+                new SkillPresetEnvVar
+                {
+                    Key = "JOB_PAYLOAD",
+                    DisplayName = "Job Configuration",
+                    Description = "JSON configuration for the job",
+                    Placeholder = "{\"channel\": \"WhatsApp\", \"message\": \"Daily reminder\"}",
+                    IsSecret = false
+                },
+                new SkillPresetEnvVar
+                {
+                    Key = "TIMEZONE",
+                    DisplayName = "Timezone",
+                    Description = "Timezone for schedule (e.g., Asia/Kolkata)",
+                    Placeholder = "UTC",
+                    IsSecret = false
+                }
+            ],
+            SetupInstructions = "Cron examples: '0 9 * * *' = 9 AM daily, '0 */2 * * *' = every 2 hours, '0 9 * * 1' = 9 AM Mondays"
         }
     ];
 

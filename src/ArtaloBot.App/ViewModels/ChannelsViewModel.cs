@@ -16,6 +16,9 @@ public partial class ChannelsViewModel : ObservableObject
     private readonly IAgentService? _agentService;
     private readonly IDebugService? _debugService;
     private readonly WhatsAppChannel? _whatsAppChannel;
+    private readonly TelegramChannel? _telegramChannel;
+    private readonly DiscordChannel? _discordChannel;
+    private readonly SlackChannel? _slackChannel;
 
     [ObservableProperty]
     private ObservableCollection<ChannelConfigViewModel> _channels = [];
@@ -43,6 +46,18 @@ public partial class ChannelsViewModel : ObservableObject
     [ObservableProperty]
     private string _whatsAppStatus = "Not Connected";
 
+    // Telegram specific
+    [ObservableProperty]
+    private string _telegramStatus = "Not Connected";
+
+    // Discord specific
+    [ObservableProperty]
+    private string _discordStatus = "Not Connected";
+
+    // Slack specific
+    [ObservableProperty]
+    private string _slackStatus = "Not Connected";
+
     public ChannelsViewModel(
         ISettingsService settingsService,
         IChannelManager? channelManager = null,
@@ -54,14 +69,39 @@ public partial class ChannelsViewModel : ObservableObject
         _agentService = agentService;
         _debugService = debugService;
 
-        // Get WhatsApp channel from manager
+        // Get channel providers from manager
         _whatsAppChannel = channelManager?.GetProvider(ChannelType.WhatsApp) as WhatsAppChannel;
+        _telegramChannel = channelManager?.GetProvider(ChannelType.Telegram) as TelegramChannel;
+        _discordChannel = channelManager?.GetProvider(ChannelType.Discord) as DiscordChannel;
+        _slackChannel = channelManager?.GetProvider(ChannelType.Slack) as SlackChannel;
 
+        // WhatsApp events
         if (_whatsAppChannel != null)
         {
             _whatsAppChannel.QrCodeGenerated += OnQrCodeGenerated;
-            _whatsAppChannel.ConnectionStatusChanged += OnConnectionStatusChanged;
+            _whatsAppChannel.ConnectionStatusChanged += OnWhatsAppConnectionStatusChanged;
             _whatsAppChannel.MessageReceived += OnMessageReceived;
+        }
+
+        // Telegram events
+        if (_telegramChannel != null)
+        {
+            _telegramChannel.ConnectionStatusChanged += OnTelegramConnectionStatusChanged;
+            _telegramChannel.MessageReceived += OnMessageReceived;
+        }
+
+        // Discord events
+        if (_discordChannel != null)
+        {
+            _discordChannel.ConnectionStatusChanged += OnDiscordConnectionStatusChanged;
+            _discordChannel.MessageReceived += OnMessageReceived;
+        }
+
+        // Slack events
+        if (_slackChannel != null)
+        {
+            _slackChannel.ConnectionStatusChanged += OnSlackConnectionStatusChanged;
+            _slackChannel.MessageReceived += OnMessageReceived;
         }
 
         InitializeChannels();
@@ -85,24 +125,10 @@ public partial class ChannelsViewModel : ObservableObject
                 Type = ChannelType.Telegram,
                 Name = "Telegram",
                 Icon = "Telegram",
-                Description = "Connect via Telegram Bot API",
-                IsComingSoon = true,
+                Description = "Connect via Telegram Bot API. Get your bot token from @BotFather",
                 ConfigurationFields =
                 [
-                    new ConfigFieldViewModel { Key = "BotToken", Label = "Bot Token", IsRequired = true, IsPassword = true }
-                ]
-            },
-            new ChannelConfigViewModel
-            {
-                Type = ChannelType.Slack,
-                Name = "Slack",
-                Icon = "Slack",
-                Description = "Connect to Slack workspace",
-                IsComingSoon = true,
-                ConfigurationFields =
-                [
-                    new ConfigFieldViewModel { Key = "BotToken", Label = "Bot Token", IsRequired = true, IsPassword = true },
-                    new ConfigFieldViewModel { Key = "AppToken", Label = "App Token", IsRequired = true, IsPassword = true }
+                    new ConfigFieldViewModel { Key = "BotToken", Label = "Bot Token", Placeholder = "123456789:ABCdefGHI...", IsRequired = true, IsPassword = true }
                 ]
             },
             new ChannelConfigViewModel
@@ -110,12 +136,22 @@ public partial class ChannelsViewModel : ObservableObject
                 Type = ChannelType.Discord,
                 Name = "Discord",
                 Icon = "Discord",
-                Description = "Connect via Discord Bot",
-                IsComingSoon = true,
+                Description = "Connect via Discord Bot. Create a bot at Discord Developer Portal",
                 ConfigurationFields =
                 [
-                    new ConfigFieldViewModel { Key = "BotToken", Label = "Bot Token", IsRequired = true, IsPassword = true },
-                    new ConfigFieldViewModel { Key = "GuildId", Label = "Server ID", IsRequired = false }
+                    new ConfigFieldViewModel { Key = "BotToken", Label = "Bot Token", Placeholder = "MTIz...", IsRequired = true, IsPassword = true }
+                ]
+            },
+            new ChannelConfigViewModel
+            {
+                Type = ChannelType.Slack,
+                Name = "Slack",
+                Icon = "Slack",
+                Description = "Connect to Slack workspace using Socket Mode",
+                ConfigurationFields =
+                [
+                    new ConfigFieldViewModel { Key = "BotToken", Label = "Bot Token (xoxb-)", Placeholder = "xoxb-...", IsRequired = true, IsPassword = true },
+                    new ConfigFieldViewModel { Key = "AppToken", Label = "App Token (xapp-)", Placeholder = "xapp-...", IsRequired = true, IsPassword = true }
                 ]
             },
             new ChannelConfigViewModel
@@ -271,7 +307,7 @@ public partial class ChannelsViewModel : ObservableObject
         });
     }
 
-    private void OnConnectionStatusChanged(object? sender, WhatsAppConnectionStatus status)
+    private void OnWhatsAppConnectionStatusChanged(object? sender, WhatsAppConnectionStatus status)
     {
         Application.Current?.Dispatcher?.Invoke(() =>
         {
@@ -313,6 +349,78 @@ public partial class ChannelsViewModel : ObservableObject
         });
     }
 
+    private void OnTelegramConnectionStatusChanged(object? sender, TelegramConnectionStatus status)
+    {
+        Application.Current?.Dispatcher?.Invoke(() =>
+        {
+            var telegramChannel = Channels.FirstOrDefault(c => c.Type == ChannelType.Telegram);
+            if (telegramChannel == null) return;
+
+            telegramChannel.IsConnected = status.IsConnected;
+            telegramChannel.IsConnecting = false;
+
+            if (status.IsConnected)
+            {
+                TelegramStatus = $"Connected: @{status.BotUsername}";
+                StatusMessage = $"Telegram connected as @{status.BotUsername}";
+                _debugService?.Success("Telegram", $"Connected as @{status.BotUsername}");
+            }
+            else
+            {
+                TelegramStatus = "Disconnected";
+                StatusMessage = "Telegram disconnected";
+            }
+        });
+    }
+
+    private void OnDiscordConnectionStatusChanged(object? sender, DiscordConnectionStatus status)
+    {
+        Application.Current?.Dispatcher?.Invoke(() =>
+        {
+            var discordChannel = Channels.FirstOrDefault(c => c.Type == ChannelType.Discord);
+            if (discordChannel == null) return;
+
+            discordChannel.IsConnected = status.IsConnected;
+            discordChannel.IsConnecting = false;
+
+            if (status.IsConnected)
+            {
+                DiscordStatus = $"Connected: {status.BotUsername}";
+                StatusMessage = $"Discord connected as {status.BotUsername}";
+                _debugService?.Success("Discord", $"Connected as {status.BotUsername}");
+            }
+            else
+            {
+                DiscordStatus = "Disconnected";
+                StatusMessage = "Discord disconnected";
+            }
+        });
+    }
+
+    private void OnSlackConnectionStatusChanged(object? sender, SlackConnectionStatus status)
+    {
+        Application.Current?.Dispatcher?.Invoke(() =>
+        {
+            var slackChannel = Channels.FirstOrDefault(c => c.Type == ChannelType.Slack);
+            if (slackChannel == null) return;
+
+            slackChannel.IsConnected = status.IsConnected;
+            slackChannel.IsConnecting = false;
+
+            if (status.IsConnected)
+            {
+                SlackStatus = $"Connected: @{status.BotUsername}";
+                StatusMessage = $"Slack connected as @{status.BotUsername}";
+                _debugService?.Success("Slack", $"Connected as @{status.BotUsername}");
+            }
+            else
+            {
+                SlackStatus = "Disconnected";
+                StatusMessage = "Slack disconnected";
+            }
+        });
+    }
+
     private void OnMessageReceived(object? sender, ChannelMessage message)
     {
         _debugService?.Info("WhatsApp", $"Message received from {message.SenderName}", message.Content);
@@ -321,15 +429,15 @@ public partial class ChannelsViewModel : ObservableObject
     [RelayCommand]
     private async Task ConnectChannel(ChannelConfigViewModel channel)
     {
-        if (channel.Type == ChannelType.WhatsApp)
-        {
-            await ConnectWhatsAppAsync(channel);
-            return;
-        }
+        // Validate required fields
+        var missingFields = channel.ConfigurationFields
+            .Where(f => f.IsRequired && string.IsNullOrWhiteSpace(f.Value))
+            .Select(f => f.Label)
+            .ToList();
 
-        if (_channelManager == null)
+        if (missingFields.Count > 0 && channel.Type != ChannelType.WhatsApp)
         {
-            StatusMessage = "Channel manager not available";
+            StatusMessage = $"Missing required fields: {string.Join(", ", missingFields)}";
             return;
         }
 
@@ -341,22 +449,76 @@ public partial class ChannelsViewModel : ObservableObject
             var config = channel.ConfigurationFields
                 .ToDictionary(f => f.Key, f => f.Value);
 
-            var success = await _channelManager.ConnectChannelAsync(channel.Type, config);
+            switch (channel.Type)
+            {
+                case ChannelType.WhatsApp:
+                    await ConnectWhatsAppAsync(channel);
+                    break;
 
-            channel.IsConnected = success;
-            StatusMessage = success
-                ? $"Connected to {channel.Name} successfully!"
-                : $"Failed to connect to {channel.Name}";
+                case ChannelType.Telegram:
+                    await ConnectTelegramAsync(channel, config);
+                    break;
+
+                case ChannelType.Discord:
+                    await ConnectDiscordAsync(channel, config);
+                    break;
+
+                case ChannelType.Slack:
+                    await ConnectSlackAsync(channel, config);
+                    break;
+
+                default:
+                    StatusMessage = $"{channel.Name} is not yet supported";
+                    channel.IsConnecting = false;
+                    break;
+            }
         }
         catch (Exception ex)
         {
             StatusMessage = $"Error: {ex.Message}";
             channel.IsConnected = false;
-        }
-        finally
-        {
             channel.IsConnecting = false;
+            _debugService?.Error(channel.Name, "Connection failed", ex.Message);
         }
+    }
+
+    private async Task ConnectTelegramAsync(ChannelConfigViewModel channel, Dictionary<string, string> config)
+    {
+        if (_telegramChannel == null)
+        {
+            StatusMessage = "Telegram channel not available";
+            channel.IsConnecting = false;
+            return;
+        }
+
+        TelegramStatus = "Connecting...";
+        await _telegramChannel.ConnectAsync(config);
+    }
+
+    private async Task ConnectDiscordAsync(ChannelConfigViewModel channel, Dictionary<string, string> config)
+    {
+        if (_discordChannel == null)
+        {
+            StatusMessage = "Discord channel not available";
+            channel.IsConnecting = false;
+            return;
+        }
+
+        DiscordStatus = "Connecting...";
+        await _discordChannel.ConnectAsync(config);
+    }
+
+    private async Task ConnectSlackAsync(ChannelConfigViewModel channel, Dictionary<string, string> config)
+    {
+        if (_slackChannel == null)
+        {
+            StatusMessage = "Slack channel not available";
+            channel.IsConnecting = false;
+            return;
+        }
+
+        SlackStatus = "Connecting...";
+        await _slackChannel.ConnectAsync(config);
     }
 
     private async Task ConnectWhatsAppAsync(ChannelConfigViewModel channel)
@@ -389,23 +551,49 @@ public partial class ChannelsViewModel : ObservableObject
     [RelayCommand]
     private async Task DisconnectChannel(ChannelConfigViewModel channel)
     {
-        if (channel.Type == ChannelType.WhatsApp && _whatsAppChannel != null)
+        try
         {
-            await _whatsAppChannel.DisconnectAsync();
+            switch (channel.Type)
+            {
+                case ChannelType.WhatsApp when _whatsAppChannel != null:
+                    await _whatsAppChannel.DisconnectAsync();
+                    ShowQrCode = false;
+                    QrCodeImage = null;
+                    ConnectedNumber = null;
+                    WhatsAppStatus = "Disconnected";
+                    break;
+
+                case ChannelType.Telegram when _telegramChannel != null:
+                    await _telegramChannel.DisconnectAsync();
+                    TelegramStatus = "Disconnected";
+                    break;
+
+                case ChannelType.Discord when _discordChannel != null:
+                    await _discordChannel.DisconnectAsync();
+                    DiscordStatus = "Disconnected";
+                    break;
+
+                case ChannelType.Slack when _slackChannel != null:
+                    await _slackChannel.DisconnectAsync();
+                    SlackStatus = "Disconnected";
+                    break;
+
+                default:
+                    if (_channelManager != null)
+                        await _channelManager.DisconnectChannelAsync(channel.Type);
+                    break;
+            }
+
             channel.IsConnected = false;
-            ShowQrCode = false;
-            QrCodeImage = null;
-            ConnectedNumber = null;
-            WhatsAppStatus = "Disconnected";
-            StatusMessage = "WhatsApp disconnected";
-            return;
+            channel.IsConnecting = false;
+            StatusMessage = $"Disconnected from {channel.Name}";
+            _debugService?.Info(channel.Name, "Disconnected");
         }
-
-        if (_channelManager == null) return;
-
-        await _channelManager.DisconnectChannelAsync(channel.Type);
-        channel.IsConnected = false;
-        StatusMessage = $"Disconnected from {channel.Name}";
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error disconnecting: {ex.Message}";
+            _debugService?.Error(channel.Name, "Disconnect failed", ex.Message);
+        }
     }
 
     [RelayCommand]

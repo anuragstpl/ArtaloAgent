@@ -3,6 +3,7 @@ using System.IO;
 using System.Windows;
 using ArtaloBot.Core.Interfaces;
 using ArtaloBot.Core.Models;
+using ArtaloBot.Services.AgentSkills;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
@@ -13,6 +14,7 @@ public partial class AgentsViewModel : ObservableObject
 {
     private readonly IAgentService _agentService;
     private readonly IDocumentProcessor _documentProcessor;
+    private readonly IAgentSkillService _skillService;
     private readonly IDebugService? _debugService;
 
     [ObservableProperty]
@@ -65,6 +67,101 @@ public partial class AgentsViewModel : ObservableObject
     [ObservableProperty]
     private string _pasteInstructions = string.Empty;
 
+    // Skill management fields
+    [ObservableProperty]
+    private ObservableCollection<SkillItemViewModel> _skills = [];
+
+    [ObservableProperty]
+    private SkillItemViewModel? _selectedSkill;
+
+    [ObservableProperty]
+    private bool _showSkillEditor;
+
+    [ObservableProperty]
+    private bool _isNewSkill;
+
+    [ObservableProperty]
+    private SkillType _editSkillType = SkillType.Email;
+
+    [ObservableProperty]
+    private string _editSkillName = string.Empty;
+
+    [ObservableProperty]
+    private string _editSkillDescription = string.Empty;
+
+    [ObservableProperty]
+    private bool _editSkillEnabled = true;
+
+    // Email skill config
+    [ObservableProperty]
+    private string _emailSmtpHost = string.Empty;
+
+    [ObservableProperty]
+    private int _emailSmtpPort = 587;
+
+    [ObservableProperty]
+    private bool _emailUseSsl = true;
+
+    [ObservableProperty]
+    private string _emailUsername = string.Empty;
+
+    [ObservableProperty]
+    private string _emailPassword = string.Empty;
+
+    [ObservableProperty]
+    private string _emailFromAddress = string.Empty;
+
+    [ObservableProperty]
+    private string _emailFromName = string.Empty;
+
+    [ObservableProperty]
+    private string _emailTestAddress = string.Empty;
+
+    // Webhook skill config
+    [ObservableProperty]
+    private string _webhookUrl = string.Empty;
+
+    [ObservableProperty]
+    private string _webhookMethod = "POST";
+
+    [ObservableProperty]
+    private string _webhookAuthType = "None";
+
+    [ObservableProperty]
+    private string _webhookAuthValue = string.Empty;
+
+    [ObservableProperty]
+    private string _webhookBodyTemplate = "{}";
+
+    // Job schedule config
+    [ObservableProperty]
+    private string _jobCronExpression = "0 9 * * *";
+
+    [ObservableProperty]
+    private string _jobType = "SendMessage";
+
+    [ObservableProperty]
+    private string _jobPayload = string.Empty;
+
+    [ObservableProperty]
+    private string _skillTestResult = string.Empty;
+
+    [ObservableProperty]
+    private bool _isTestingSkill;
+
+    public IReadOnlyList<SkillType> AvailableSkillTypes { get; } =
+    [
+        SkillType.Email,
+        SkillType.Webhook,
+        SkillType.JobSchedule
+    ];
+
+    public IReadOnlyList<string> AvailableHttpMethods { get; } =
+        ["GET", "POST", "PUT", "DELETE", "PATCH"];
+
+    public IReadOnlyList<string> AvailableAuthTypes { get; } =
+        ["None", "Bearer", "Basic", "ApiKey"];
+
     public IReadOnlyList<string> AvailableIcons { get; } =
     [
         "Robot", "Account", "Package", "Cart", "Store", "Calculator",
@@ -75,10 +172,12 @@ public partial class AgentsViewModel : ObservableObject
     public AgentsViewModel(
         IAgentService agentService,
         IDocumentProcessor documentProcessor,
+        IAgentSkillService skillService,
         IDebugService? debugService = null)
     {
         _agentService = agentService;
         _documentProcessor = documentProcessor;
+        _skillService = skillService;
         _debugService = debugService;
     }
 
@@ -643,6 +742,353 @@ public partial class AgentsViewModel : ObservableObject
             """;
     }
 
+    #region Skill Management
+
+    public async Task LoadSkillsAsync()
+    {
+        if (SelectedAgent == null) return;
+
+        try
+        {
+            var skills = await _skillService.GetSkillsForAgentAsync(SelectedAgent.Id);
+            Skills.Clear();
+            foreach (var skill in skills)
+            {
+                Skills.Add(new SkillItemViewModel(skill));
+            }
+            _debugService?.Info("AgentsVM", $"Loaded {skills.Count} skills for agent {SelectedAgent.Name}");
+        }
+        catch (Exception ex)
+        {
+            _debugService?.Error("AgentsVM", "Failed to load skills", ex.Message);
+        }
+    }
+
+    partial void OnSelectedAgentChanged(AgentItemViewModel? value)
+    {
+        if (value != null)
+        {
+            _ = LoadSkillsAsync();
+        }
+        else
+        {
+            Skills.Clear();
+        }
+    }
+
+    [RelayCommand]
+    private void NewSkill()
+    {
+        if (SelectedAgent == null)
+        {
+            StatusMessage = "Please select an agent first";
+            return;
+        }
+
+        IsNewSkill = true;
+        EditSkillType = SkillType.Email;
+        EditSkillName = "";
+        EditSkillDescription = "";
+        EditSkillEnabled = true;
+        ClearSkillConfigFields();
+        SkillTestResult = "";
+        ShowSkillEditor = true;
+    }
+
+    [RelayCommand]
+    private void EditSkill(SkillItemViewModel? skill)
+    {
+        if (skill == null) return;
+
+        IsNewSkill = false;
+        SelectedSkill = skill;
+        EditSkillType = skill.SkillType;
+        EditSkillName = skill.Name;
+        EditSkillDescription = skill.Description;
+        EditSkillEnabled = skill.IsEnabled;
+
+        // Load config based on type
+        LoadSkillConfig(skill);
+        SkillTestResult = skill.IsTested ? "Previously tested successfully" : "";
+        ShowSkillEditor = true;
+    }
+
+    private void LoadSkillConfig(SkillItemViewModel skill)
+    {
+        ClearSkillConfigFields();
+
+        switch (skill.SkillType)
+        {
+            case SkillType.Email:
+                var emailConfig = skill.GetConfig<EmailSkillConfig>();
+                if (emailConfig != null)
+                {
+                    EmailSmtpHost = emailConfig.SmtpHost;
+                    EmailSmtpPort = emailConfig.SmtpPort;
+                    EmailUseSsl = emailConfig.UseSsl;
+                    EmailUsername = emailConfig.Username;
+                    EmailPassword = emailConfig.Password;
+                    EmailFromAddress = emailConfig.FromEmail;
+                    EmailFromName = emailConfig.FromName;
+                }
+                break;
+
+            case SkillType.Webhook:
+                var webhookConfig = skill.GetConfig<WebhookSkillConfig>();
+                if (webhookConfig != null)
+                {
+                    WebhookUrl = webhookConfig.Url;
+                    WebhookMethod = webhookConfig.Method;
+                    WebhookAuthType = webhookConfig.AuthType;
+                    WebhookAuthValue = webhookConfig.AuthValue;
+                    WebhookBodyTemplate = webhookConfig.BodyTemplate;
+                }
+                break;
+
+            case SkillType.JobSchedule:
+                var jobConfig = skill.GetConfig<JobScheduleSkillConfig>();
+                if (jobConfig != null)
+                {
+                    JobCronExpression = jobConfig.CronExpression;
+                    JobType = jobConfig.JobType;
+                    JobPayload = jobConfig.JobPayload;
+                }
+                break;
+        }
+    }
+
+    private void ClearSkillConfigFields()
+    {
+        // Email
+        EmailSmtpHost = "";
+        EmailSmtpPort = 587;
+        EmailUseSsl = true;
+        EmailUsername = "";
+        EmailPassword = "";
+        EmailFromAddress = "";
+        EmailFromName = "";
+        EmailTestAddress = "";
+
+        // Webhook
+        WebhookUrl = "";
+        WebhookMethod = "POST";
+        WebhookAuthType = "None";
+        WebhookAuthValue = "";
+        WebhookBodyTemplate = "{}";
+
+        // Job
+        JobCronExpression = "0 9 * * *";
+        JobType = "SendMessage";
+        JobPayload = "";
+    }
+
+    [RelayCommand]
+    private async Task SaveSkill()
+    {
+        if (SelectedAgent == null || string.IsNullOrWhiteSpace(EditSkillName))
+        {
+            StatusMessage = "Skill name is required";
+            return;
+        }
+
+        IsLoading = true;
+
+        try
+        {
+            var skill = IsNewSkill ? new AgentSkill() : await _skillService.GetSkillAsync(SelectedSkill!.Id) ?? new AgentSkill();
+
+            skill.AgentId = SelectedAgent.Id;
+            skill.SkillType = EditSkillType;
+            skill.Name = EditSkillName;
+            skill.Description = EditSkillDescription;
+            skill.IsEnabled = EditSkillEnabled;
+
+            // Set config based on type
+            switch (EditSkillType)
+            {
+                case SkillType.Email:
+                    skill.SetConfig(new EmailSkillConfig
+                    {
+                        SmtpHost = EmailSmtpHost,
+                        SmtpPort = EmailSmtpPort,
+                        UseSsl = EmailUseSsl,
+                        Username = EmailUsername,
+                        Password = EmailPassword,
+                        FromEmail = EmailFromAddress,
+                        FromName = EmailFromName
+                    });
+                    break;
+
+                case SkillType.Webhook:
+                    skill.SetConfig(new WebhookSkillConfig
+                    {
+                        Url = WebhookUrl,
+                        Method = WebhookMethod,
+                        AuthType = WebhookAuthType,
+                        AuthValue = WebhookAuthValue,
+                        BodyTemplate = WebhookBodyTemplate
+                    });
+                    break;
+
+                case SkillType.JobSchedule:
+                    skill.SetConfig(new JobScheduleSkillConfig
+                    {
+                        CronExpression = JobCronExpression,
+                        JobType = JobType,
+                        JobPayload = JobPayload
+                    });
+                    break;
+            }
+
+            if (IsNewSkill)
+            {
+                var created = await _skillService.CreateSkillAsync(skill);
+                Skills.Add(new SkillItemViewModel(created));
+                StatusMessage = $"Created skill: {created.Name}";
+            }
+            else
+            {
+                await _skillService.UpdateSkillAsync(skill);
+                SelectedSkill!.Name = skill.Name;
+                SelectedSkill.Description = skill.Description;
+                SelectedSkill.IsEnabled = skill.IsEnabled;
+                SelectedSkill.ConfigJson = skill.ConfigJson;
+                StatusMessage = $"Updated skill: {skill.Name}";
+            }
+
+            ShowSkillEditor = false;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    [RelayCommand]
+    private void CancelSkillEdit()
+    {
+        ShowSkillEditor = false;
+    }
+
+    [RelayCommand]
+    private async Task DeleteSkill(SkillItemViewModel? skill)
+    {
+        if (skill == null) return;
+
+        var result = MessageBox.Show(
+            $"Delete skill '{skill.Name}'?",
+            "Confirm Delete",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (result != MessageBoxResult.Yes) return;
+
+        try
+        {
+            await _skillService.DeleteSkillAsync(skill.Id);
+            Skills.Remove(skill);
+            StatusMessage = $"Deleted skill: {skill.Name}";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task TestSkill()
+    {
+        if (SelectedAgent == null)
+        {
+            SkillTestResult = "Error: No agent selected";
+            return;
+        }
+
+        IsTestingSkill = true;
+        SkillTestResult = "Testing...";
+
+        try
+        {
+            // Create a temporary skill object with current config
+            var tempSkill = new AgentSkill
+            {
+                Id = IsNewSkill ? 0 : SelectedSkill?.Id ?? 0,
+                AgentId = SelectedAgent.Id,
+                SkillType = EditSkillType,
+                Name = EditSkillName,
+                Description = EditSkillDescription
+            };
+
+            // Set config
+            switch (EditSkillType)
+            {
+                case SkillType.Email:
+                    tempSkill.SetConfig(new EmailSkillConfig
+                    {
+                        SmtpHost = EmailSmtpHost,
+                        SmtpPort = EmailSmtpPort,
+                        UseSsl = EmailUseSsl,
+                        Username = EmailUsername,
+                        Password = EmailPassword,
+                        FromEmail = EmailFromAddress,
+                        FromName = EmailFromName
+                    });
+                    break;
+
+                case SkillType.Webhook:
+                    tempSkill.SetConfig(new WebhookSkillConfig
+                    {
+                        Url = WebhookUrl,
+                        Method = WebhookMethod,
+                        AuthType = WebhookAuthType,
+                        AuthValue = WebhookAuthValue,
+                        BodyTemplate = WebhookBodyTemplate
+                    });
+                    break;
+
+                case SkillType.JobSchedule:
+                    tempSkill.SetConfig(new JobScheduleSkillConfig
+                    {
+                        CronExpression = JobCronExpression,
+                        JobType = JobType,
+                        JobPayload = JobPayload
+                    });
+                    break;
+            }
+
+            var testParams = new Dictionary<string, string>();
+            if (!string.IsNullOrEmpty(EmailTestAddress))
+            {
+                testParams["testEmail"] = EmailTestAddress;
+            }
+
+            var result = await _skillService.TestSkillAsync(tempSkill, testParams);
+
+            SkillTestResult = result.Success
+                ? $"SUCCESS: {result.Result}"
+                : $"FAILED: {result.Error}";
+
+            if (result.Success && SelectedSkill != null)
+            {
+                SelectedSkill.IsTested = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            SkillTestResult = $"ERROR: {ex.Message}";
+        }
+        finally
+        {
+            IsTestingSkill = false;
+        }
+    }
+
+    #endregion
+
     private static string GetDefaultSystemPrompt()
     {
         return """
@@ -755,5 +1201,55 @@ public partial class DocumentItemViewModel : ObservableObject
         }
 
         return $"{size:0.##} {suffixes[order]}";
+    }
+}
+
+public partial class SkillItemViewModel : ObservableObject
+{
+    public int Id { get; set; }
+
+    [ObservableProperty]
+    private string _name = string.Empty;
+
+    [ObservableProperty]
+    private string _description = string.Empty;
+
+    [ObservableProperty]
+    private SkillType _skillType;
+
+    [ObservableProperty]
+    private bool _isEnabled = true;
+
+    [ObservableProperty]
+    private bool _isTested;
+
+    [ObservableProperty]
+    private string _configJson = "{}";
+
+    public SkillItemViewModel()
+    {
+    }
+
+    public SkillItemViewModel(AgentSkill skill)
+    {
+        Id = skill.Id;
+        Name = skill.Name;
+        Description = skill.Description;
+        SkillType = skill.SkillType;
+        IsEnabled = skill.IsEnabled;
+        IsTested = skill.IsTested;
+        ConfigJson = skill.ConfigJson;
+    }
+
+    public T? GetConfig<T>() where T : class
+    {
+        try
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<T>(ConfigJson);
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

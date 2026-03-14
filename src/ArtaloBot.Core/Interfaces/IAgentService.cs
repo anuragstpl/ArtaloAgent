@@ -35,7 +35,7 @@ public interface IAgentService
     Task<List<Agent>> GetAgentsForChannelAsync(ChannelType channelType);
     Task AssignAgentToChannelAsync(int agentId, ChannelType channelType, int priority = 0);
     Task UnassignAgentFromChannelAsync(int agentId, ChannelType channelType);
-    Task<List<AgentSearchResult>> SearchChannelKnowledgeAsync(ChannelType channelType, string query, int maxResults = 10);
+    Task<List<AgentSearchResult>> SearchChannelKnowledgeAsync(ChannelType channelType, string query, int maxResults = 10, float minSimilarity = 0.15f);
 }
 
 /// <summary>

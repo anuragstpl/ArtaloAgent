@@ -542,7 +542,7 @@ public class AgentService : IAgentService
         }
     }
 
-    public async Task<List<AgentSearchResult>> SearchChannelKnowledgeAsync(ChannelType channelType, string query, int maxResults = 10)
+    public async Task<List<AgentSearchResult>> SearchChannelKnowledgeAsync(ChannelType channelType, string query, int maxResults = 10, float minSimilarity = 0.15f)
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         await using var db = await _dbFactory.CreateDbContextAsync();
@@ -580,6 +580,13 @@ public class AgentService : IAgentService
         stopwatch.Restart();
         var queryEmbedding = await _memoryService.GetEmbeddingAsync(query);
         var embeddingTime = stopwatch.ElapsedMilliseconds;
+
+        if (queryEmbedding.Length == 0)
+        {
+            _debugService?.Error("VectorSearch", "Failed to generate query embedding");
+            return [];
+        }
+
         _debugService?.Info("VectorSearch", $"Query embedding generated",
             $"Time: {embeddingTime}ms | Dimensions: {queryEmbedding.Length}");
 
@@ -594,13 +601,14 @@ public class AgentService : IAgentService
 
         if (chunks.Count == 0)
         {
-            _debugService?.Warning("VectorSearch", "No knowledge chunks found in assigned agents");
+            _debugService?.Warning("VectorSearch", "No knowledge chunks found in assigned agents",
+                "Make sure documents are uploaded and processed for assigned agents");
             return [];
         }
 
-        // Calculate similarities and rank
+        // Calculate similarities and rank ALL chunks first
         stopwatch.Restart();
-        var results = chunks
+        var allResults = chunks
             .Select(chunk => new AgentSearchResult
             {
                 Chunk = chunk,
@@ -609,10 +617,33 @@ public class AgentService : IAgentService
                 AgentId = chunk.AgentId,
                 AgentName = agentNames.GetValueOrDefault(chunk.AgentId, "Unknown")
             })
-            .Where(r => r.Similarity > 0.3f)
             .OrderByDescending(r => r.Similarity)
+            .ToList();
+
+        // Log similarity distribution
+        if (allResults.Count > 0)
+        {
+            var maxSim = allResults[0].Similarity;
+            var minSim = allResults[^1].Similarity;
+            var avgSim = allResults.Average(r => r.Similarity);
+            _debugService?.Info("VectorSearch",
+                $"Similarity distribution: Max={maxSim:F3}, Min={minSim:F3}, Avg={avgSim:F3}");
+        }
+
+        // Filter by threshold
+        var results = allResults
+            .Where(r => r.Similarity > minSimilarity)
             .Take(maxResults)
             .ToList();
+
+        // If no results above threshold but we have chunks, return top ones with lower threshold
+        if (results.Count == 0 && allResults.Count > 0)
+        {
+            _debugService?.Warning("VectorSearch",
+                $"No chunks above threshold ({minSimilarity}), returning top {Math.Min(5, allResults.Count)} results");
+            results = allResults.Take(Math.Min(5, allResults.Count)).ToList();
+        }
+
         var similarityTime = stopwatch.ElapsedMilliseconds;
 
         var totalTime = dbQueryTime + embeddingTime + chunkLoadTime + similarityTime;
@@ -620,6 +651,14 @@ public class AgentService : IAgentService
             $"Search complete: {results.Count}/{chunks.Count} chunks matched",
             $"Total: {totalTime}ms | Embedding: {embeddingTime}ms | Similarity: {similarityTime}ms" +
             (results.Count > 0 ? $" | Best: {results[0].Similarity:F3}" : ""));
+
+        // Log top result preview
+        if (results.Count > 0)
+        {
+            var preview = results[0].Chunk.Content;
+            if (preview.Length > 150) preview = preview[..150] + "...";
+            _debugService?.Info("VectorSearch", "Top result preview", preview);
+        }
 
         return results;
     }
