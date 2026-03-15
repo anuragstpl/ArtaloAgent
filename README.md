@@ -38,6 +38,93 @@
 
 ArtaloBot is a feature-rich Windows desktop application that provides a unified interface for interacting with multiple AI language models. It supports custom knowledge base agents, multi-channel messaging (WhatsApp, Telegram, Discord, Slack, and more), and extensible MCP (Model Context Protocol) skills.
 
+---
+
+## Screenshots
+
+### Chat Interface
+<p align="center">
+  <img src="Screenshots/Chat.png" alt="Chat Interface" width="800"/>
+</p>
+
+The main chat interface features a clean, modern design with:
+- **LLM Provider Selection** - Switch between Ollama, OpenAI, and Gemini
+- **Model Dropdown** - Choose specific models (auto-populated for Ollama)
+- **Knowledge Source** - Select agents for knowledge-based responses
+- **Real-time Streaming** - Watch responses appear in real-time
+- **Markdown Rendering** - Code blocks, tables, and formatting support
+- **Chat History** - Access previous conversations from the sidebar
+
+---
+
+### Settings
+<p align="center">
+  <img src="Screenshots/Settings.png" alt="Settings" width="800"/>
+</p>
+
+Configure your AI providers and application preferences:
+- **API Keys** - Securely store OpenAI and Gemini API keys
+- **Ollama Configuration** - Set custom endpoint URL
+- **Default Provider** - Choose your preferred LLM provider
+- **Memory Settings** - Configure long-term memory and embeddings
+
+---
+
+### Knowledge Agents
+<p align="center">
+  <img src="Screenshots/Agents.png" alt="Agents" width="800"/>
+</p>
+
+Create and manage AI agents with custom knowledge bases:
+- **Create Agents** - Define name, description, and system prompts
+- **Document Upload** - Add PDF, DOCX, TXT, CSV, JSON, XML, MD files
+- **Processing Status** - Track document chunking and embedding progress
+- **Knowledge Search** - Agents use vector similarity for accurate responses
+
+---
+
+### Communication Channels
+<p align="center">
+  <img src="Screenshots/Channels.png" alt="Channels" width="800"/>
+</p>
+
+Connect to multiple messaging platforms:
+- **WhatsApp** - QR code authentication via Baileys
+- **Telegram** - Bot API with token configuration
+- **Discord** - Gateway WebSocket connection
+- **Slack** - Socket Mode for real-time messaging
+- **Viber, LINE, Messenger** - Additional platform support
+- **Agent Assignment** - Assign knowledge agents to each channel
+- **Per-Channel LLM** - Configure different providers per channel
+
+---
+
+### MCP Skills
+<p align="center">
+  <img src="Screenshots/Skills.png" alt="Skills" width="800"/>
+</p>
+
+Extend AI capabilities with MCP-compatible tools:
+- **Add Skills** - Connect to MCP tool servers
+- **Auto-Discovery** - Automatically detect available tools
+- **Built-in Skills** - Calculator, DateTime, Weather, Web Search
+- **Custom Tools** - Configure command, arguments, and environment
+
+---
+
+### Debug Console
+<p align="center">
+  <img src="Screenshots/DebugConsole.png" alt="Debug Console" width="800"/>
+</p>
+
+Monitor and troubleshoot application activity:
+- **Real-time Logs** - View API calls, responses, and errors
+- **Request/Response** - Inspect LLM communication details
+- **Performance Metrics** - Track response times and token usage
+- **Error Tracking** - Identify and diagnose issues quickly
+
+---
+
 ## Features
 
 ### Multi-LLM Support
