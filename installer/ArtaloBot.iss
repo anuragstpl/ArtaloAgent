@@ -69,8 +69,8 @@ WelcomeLabel1=Welcome to the [name] Setup Wizard
 WelcomeLabel2=This will install [name/ver] on your computer.%n%nArtaloBot is a powerful AI assistant with multi-LLM support, knowledge base agents, and multi-channel communication.%n%nIt is recommended that you close all other applications before continuing.
 
 [Tasks]
-Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription: "Additional shortcuts:"; Flags: checked
-Name: "quicklaunchicon"; Description: "Create a &Quick Launch shortcut"; GroupDescription: "Additional shortcuts:"; Flags: unchecked; OnlyBelowVersion: 6.1
+Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription: "Additional shortcuts:"
+Name: "quicklaunchicon"; Description: "Create a &Quick Launch shortcut"; GroupDescription: "Additional shortcuts:"; Flags: unchecked
 
 [Files]
 ; Main application files (self-contained build)
