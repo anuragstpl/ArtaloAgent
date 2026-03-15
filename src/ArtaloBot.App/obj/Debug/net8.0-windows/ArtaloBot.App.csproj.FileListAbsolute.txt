@@ -142,3 +142,4 @@ D:\Projects\ArtaloBot\src\ArtaloBot.App\bin\Debug\net8.0-windows\UglyToad.PdfPig
 D:\Projects\ArtaloBot\src\ArtaloBot.App\bin\Debug\net8.0-windows\UglyToad.PdfPig.dll
 D:\Projects\ArtaloBot\src\ArtaloBot.App\obj\Debug\net8.0-windows\Views\AgentsView.baml
 D:\Projects\ArtaloBot\src\ArtaloBot.App\obj\Debug\net8.0-windows\Views\AgentsView.g.cs
+D:\Projects\ArtaloBot\src\ArtaloBot.App\obj\Debug\net8.0-windows\Assets\Logo.baml

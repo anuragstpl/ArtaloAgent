@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;NET;NET8_0;NETCOREAPP
 D:\Projects\ArtaloBot\src\ArtaloBot.App\App.xaml
-8-177146751
+9-283856010
 22-1380674967
 21-409701446
 272-958930281
-MainWindow.xaml;Resources\Styles.xaml;Views\AgentsView.xaml;Views\ChannelsView.xaml;Views\ChatView.xaml;Views\DebugWindow.xaml;Views\MCPView.xaml;Views\SettingsView.xaml;
+Assets\Logo.xaml;MainWindow.xaml;Resources\Styles.xaml;Views\AgentsView.xaml;Views\ChannelsView.xaml;Views\ChatView.xaml;Views\DebugWindow.xaml;Views\MCPView.xaml;Views\SettingsView.xaml;
 
 False
 
