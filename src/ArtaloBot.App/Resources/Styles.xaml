@@ -2,43 +2,53 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
 
-    <!-- Windows 11 Colors -->
-    <Color x:Key="Win11Background">#F3F3F3</Color>
+    <!-- Professional Color Palette -->
+    <Color x:Key="PrimaryBlue">#0078D4</Color>
+    <Color x:Key="PrimaryBlueDark">#106EBE</Color>
+    <Color x:Key="AccentGreen">#10B981</Color>
+    <Color x:Key="AccentOrange">#F59E0B</Color>
+    <Color x:Key="AccentRed">#EF4444</Color>
+    <Color x:Key="AccentPurple">#8B5CF6</Color>
+
+    <!-- Clean White/Gray Theme -->
+    <Color x:Key="Win11Background">#F8FAFC</Color>
     <Color x:Key="Win11Surface">#FFFFFF</Color>
-    <Color x:Key="Win11SurfaceLight">#FAFAFA</Color>
-    <Color x:Key="Win11Border">#E5E5E5</Color>
-    <Color x:Key="Win11TextPrimary">#1A1A1A</Color>
-    <Color x:Key="Win11TextSecondary">#666666</Color>
+    <Color x:Key="Win11SurfaceLight">#F1F5F9</Color>
+    <Color x:Key="Win11Border">#E2E8F0</Color>
+    <Color x:Key="Win11BorderLight">#F1F5F9</Color>
+    <Color x:Key="Win11TextPrimary">#1E293B</Color>
+    <Color x:Key="Win11TextSecondary">#64748B</Color>
     <Color x:Key="Win11Accent">#0078D4</Color>
-    <Color x:Key="Win11AccentLight">#E6F2FB</Color>
-    <Color x:Key="Win11Success">#107C10</Color>
-    <Color x:Key="Win11Error">#D13438</Color>
+    <Color x:Key="Win11AccentLight">#EFF6FF</Color>
+    <Color x:Key="Win11Success">#10B981</Color>
+    <Color x:Key="Win11Error">#EF4444</Color>
 
     <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource Win11Background}"/>
     <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource Win11Surface}"/>
     <SolidColorBrush x:Key="SurfaceLightBrush" Color="{StaticResource Win11SurfaceLight}"/>
     <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource Win11Border}"/>
+    <SolidColorBrush x:Key="BorderLightBrush" Color="{StaticResource Win11BorderLight}"/>
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource Win11TextPrimary}"/>
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource Win11TextSecondary}"/>
     <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource Win11Accent}"/>
     <SolidColorBrush x:Key="AccentLightBrush" Color="{StaticResource Win11AccentLight}"/>
 
-    <!-- User Message Bubble - Accent Color -->
+    <!-- User Message Bubble - Professional Blue -->
     <Style x:Key="UserMessageBubble" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource AccentBrush}" />
-        <Setter Property="CornerRadius" Value="8,8,2,8" />
+        <Setter Property="CornerRadius" Value="12,12,4,12" />
         <Setter Property="Padding" Value="14,10" />
         <Setter Property="Margin" Value="100,4,12,4" />
         <Setter Property="HorizontalAlignment" Value="Right" />
         <Setter Property="MaxWidth" Value="500" />
     </Style>
 
-    <!-- Assistant Message Bubble - Light Surface -->
+    <!-- Assistant Message Bubble - Clean White -->
     <Style x:Key="AssistantMessageBubble" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="8,8,8,2" />
+        <Setter Property="CornerRadius" Value="12,12,12,4" />
         <Setter Property="Padding" Value="14,10" />
         <Setter Property="Margin" Value="12,4,100,4" />
         <Setter Property="HorizontalAlignment" Value="Left" />
@@ -53,7 +63,7 @@
         <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI" />
     </Style>
 
-    <!-- Windows 11 Card/Tile -->
+    <!-- Professional Card -->
     <Style x:Key="Win11Card" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
@@ -62,7 +72,7 @@
         <Setter Property="Padding" Value="16" />
     </Style>
 
-    <!-- Windows 11 Input -->
+    <!-- Professional Input -->
     <Style x:Key="Win11TextBox" TargetType="TextBox">
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
@@ -99,7 +109,7 @@
         </Setter>
     </Style>
 
-    <!-- Windows 11 Primary Button -->
+    <!-- Professional Primary Button -->
     <Style x:Key="Win11PrimaryButton" TargetType="Button">
         <Setter Property="Background" Value="{StaticResource AccentBrush}" />
         <Setter Property="Foreground" Value="White" />
@@ -127,7 +137,7 @@
                             <Setter Property="Background" TargetName="border" Value="#005A9E" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Background" TargetName="border" Value="#CCCCCC" />
+                            <Setter Property="Background" TargetName="border" Value="#CBD5E1" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -135,7 +145,7 @@
         </Setter>
     </Style>
 
-    <!-- Windows 11 Secondary Button -->
+    <!-- Professional Secondary Button -->
     <Style x:Key="Win11SecondaryButton" TargetType="Button">
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}" />
@@ -160,6 +170,7 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter Property="Background" TargetName="border" Value="{StaticResource SurfaceLightBrush}" />
+                            <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource AccentBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter Property="Background" TargetName="border" Value="{StaticResource BorderBrush}" />
@@ -170,7 +181,7 @@
         </Setter>
     </Style>
 
-    <!-- Windows 11 Icon Button -->
+    <!-- Professional Icon Button -->
     <Style x:Key="Win11IconButton" TargetType="Button">
         <Setter Property="Width" Value="40" />
         <Setter Property="Height" Value="40" />
@@ -188,10 +199,10 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" TargetName="border" Value="#E8E8E8" />
+                            <Setter Property="Background" TargetName="border" Value="{StaticResource SurfaceLightBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter Property="Background" TargetName="border" Value="#D8D8D8" />
+                            <Setter Property="Background" TargetName="border" Value="{StaticResource BorderBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -199,7 +210,7 @@
         </Setter>
     </Style>
 
-    <!-- Windows 11 Navigation Button -->
+    <!-- Professional Navigation Button -->
     <Style x:Key="Win11NavButton" TargetType="Button">
         <Setter Property="Height" Value="44" />
         <Setter Property="Padding" Value="12,0" />
@@ -221,10 +232,10 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" TargetName="border" Value="#E8E8E8" />
+                            <Setter Property="Background" TargetName="border" Value="{StaticResource SurfaceLightBrush}" />
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter Property="Background" TargetName="border" Value="#D8D8D8" />
+                            <Setter Property="Background" TargetName="border" Value="{StaticResource BorderBrush}" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

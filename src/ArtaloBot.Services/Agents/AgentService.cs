@@ -665,6 +665,55 @@ public class AgentService : IAgentService
 
     #endregion
 
+    #region Channel LLM Configuration
+
+    public async Task<ChannelLLMConfig?> GetChannelLLMConfigAsync(ChannelType channelType)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        return await db.ChannelLLMConfigs
+            .FirstOrDefaultAsync(c => c.ChannelType == channelType);
+    }
+
+    public async Task<List<ChannelLLMConfig>> GetAllChannelLLMConfigsAsync()
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+        return await db.ChannelLLMConfigs.ToListAsync();
+    }
+
+    public async Task<ChannelLLMConfig> SaveChannelLLMConfigAsync(ChannelLLMConfig config)
+    {
+        await using var db = await _dbFactory.CreateDbContextAsync();
+
+        var existing = await db.ChannelLLMConfigs
+            .FirstOrDefaultAsync(c => c.ChannelType == config.ChannelType);
+
+        if (existing != null)
+        {
+            existing.Provider = config.Provider;
+            existing.Model = config.Model;
+            existing.Temperature = config.Temperature;
+            existing.MaxTokens = config.MaxTokens;
+            existing.IsEnabled = config.IsEnabled;
+            existing.UpdatedAt = DateTime.UtcNow;
+        }
+        else
+        {
+            config.CreatedAt = DateTime.UtcNow;
+            config.UpdatedAt = DateTime.UtcNow;
+            db.ChannelLLMConfigs.Add(config);
+        }
+
+        await db.SaveChangesAsync();
+
+        _debugService?.Success("AgentService",
+            $"Saved LLM config for {config.ChannelType}",
+            $"Provider: {config.Provider}, Model: {config.Model}");
+
+        return existing ?? config;
+    }
+
+    #endregion
+
     #region Helper Methods
 
     private static float CosineSimilarity(float[] a, float[] b)

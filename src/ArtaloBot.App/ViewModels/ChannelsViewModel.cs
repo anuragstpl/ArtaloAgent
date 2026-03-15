@@ -19,12 +19,28 @@ public partial class ChannelsViewModel : ObservableObject
     private readonly TelegramChannel? _telegramChannel;
     private readonly DiscordChannel? _discordChannel;
     private readonly SlackChannel? _slackChannel;
+    private readonly ViberChannel? _viberChannel;
+    private readonly LineChannel? _lineChannel;
+    private readonly MessengerChannel? _messengerChannel;
 
     [ObservableProperty]
     private ObservableCollection<ChannelConfigViewModel> _channels = [];
 
     [ObservableProperty]
     private ChannelConfigViewModel? _selectedChannel;
+
+    partial void OnSelectedChannelChanged(ChannelConfigViewModel? value)
+    {
+        if (value != null)
+        {
+            // Update IsAssigned status for available agents based on selected channel
+            var assignedIds = value.AssignedAgents.Select(a => a.AgentId).ToHashSet();
+            foreach (var agent in AvailableAgents)
+            {
+                agent.IsAssigned = assignedIds.Contains(agent.AgentId);
+            }
+        }
+    }
 
     [ObservableProperty]
     private string _statusMessage = string.Empty;
@@ -58,6 +74,26 @@ public partial class ChannelsViewModel : ObservableObject
     [ObservableProperty]
     private string _slackStatus = "Not Connected";
 
+    // Viber specific
+    [ObservableProperty]
+    private string _viberStatus = "Not Connected";
+
+    // LINE specific
+    [ObservableProperty]
+    private string _lineStatus = "Not Connected";
+
+    // Messenger specific
+    [ObservableProperty]
+    private string _messengerStatus = "Not Connected";
+
+    // LLM Provider options
+    public ObservableCollection<LLMProviderOption> AvailableLLMProviders { get; } =
+    [
+        new() { Provider = LLMProviderType.Ollama, DisplayName = "Ollama (Local)" },
+        new() { Provider = LLMProviderType.Gemini, DisplayName = "Google Gemini" },
+        new() { Provider = LLMProviderType.OpenAI, DisplayName = "OpenAI" }
+    ];
+
     public ChannelsViewModel(
         ISettingsService settingsService,
         IChannelManager? channelManager = null,
@@ -74,6 +110,9 @@ public partial class ChannelsViewModel : ObservableObject
         _telegramChannel = channelManager?.GetProvider(ChannelType.Telegram) as TelegramChannel;
         _discordChannel = channelManager?.GetProvider(ChannelType.Discord) as DiscordChannel;
         _slackChannel = channelManager?.GetProvider(ChannelType.Slack) as SlackChannel;
+        _viberChannel = channelManager?.GetProvider(ChannelType.Viber) as ViberChannel;
+        _lineChannel = channelManager?.GetProvider(ChannelType.Line) as LineChannel;
+        _messengerChannel = channelManager?.GetProvider(ChannelType.Messenger) as MessengerChannel;
 
         // WhatsApp events
         if (_whatsAppChannel != null)
@@ -102,6 +141,27 @@ public partial class ChannelsViewModel : ObservableObject
         {
             _slackChannel.ConnectionStatusChanged += OnSlackConnectionStatusChanged;
             _slackChannel.MessageReceived += OnMessageReceived;
+        }
+
+        // Viber events
+        if (_viberChannel != null)
+        {
+            _viberChannel.ConnectionStatusChanged += OnViberConnectionStatusChanged;
+            _viberChannel.MessageReceived += OnMessageReceived;
+        }
+
+        // LINE events
+        if (_lineChannel != null)
+        {
+            _lineChannel.ConnectionStatusChanged += OnLineConnectionStatusChanged;
+            _lineChannel.MessageReceived += OnMessageReceived;
+        }
+
+        // Messenger events
+        if (_messengerChannel != null)
+        {
+            _messengerChannel.ConnectionStatusChanged += OnMessengerConnectionStatusChanged;
+            _messengerChannel.MessageReceived += OnMessageReceived;
         }
 
         InitializeChannels();
@@ -156,6 +216,39 @@ public partial class ChannelsViewModel : ObservableObject
             },
             new ChannelConfigViewModel
             {
+                Type = ChannelType.Viber,
+                Name = "Viber",
+                Icon = "Cellphone",
+                Description = "Popular in Eastern Europe, Middle East & SE Asia. Get token from Viber Admin Panel",
+                ConfigurationFields =
+                [
+                    new ConfigFieldViewModel { Key = "AuthToken", Label = "Auth Token", Placeholder = "Your Viber bot auth token", IsRequired = true, IsPassword = true }
+                ]
+            },
+            new ChannelConfigViewModel
+            {
+                Type = ChannelType.Line,
+                Name = "LINE",
+                Icon = "Chat",
+                Description = "Popular in Japan, Thailand, Taiwan & Indonesia. Get token from LINE Developers",
+                ConfigurationFields =
+                [
+                    new ConfigFieldViewModel { Key = "ChannelAccessToken", Label = "Channel Access Token", Placeholder = "Your LINE channel access token", IsRequired = true, IsPassword = true }
+                ]
+            },
+            new ChannelConfigViewModel
+            {
+                Type = ChannelType.Messenger,
+                Name = "Messenger",
+                Icon = "Facebook",
+                Description = "Facebook Messenger - Global platform. Get token from Meta Developer Portal",
+                ConfigurationFields =
+                [
+                    new ConfigFieldViewModel { Key = "PageAccessToken", Label = "Page Access Token", Placeholder = "Your Facebook page access token", IsRequired = true, IsPassword = true }
+                ]
+            },
+            new ChannelConfigViewModel
+            {
                 Type = ChannelType.Teams,
                 Name = "Microsoft Teams",
                 Icon = "MicrosoftTeams",
@@ -188,10 +281,11 @@ public partial class ChannelsViewModel : ObservableObject
                 });
             }
 
-            // Load assignments for each channel
+            // Load assignments and LLM configs for each channel
             foreach (var channel in Channels.Where(c => !c.IsComingSoon))
             {
                 await LoadChannelAssignmentsAsync(channel);
+                await LoadChannelLLMConfigAsync(channel);
             }
 
             _debugService?.Info("ChannelsVM", $"Loaded {agents.Count} agents for assignment");
@@ -199,6 +293,64 @@ public partial class ChannelsViewModel : ObservableObject
         catch (Exception ex)
         {
             _debugService?.Error("ChannelsVM", "Failed to load agents", ex.Message);
+        }
+    }
+
+    private async Task LoadChannelLLMConfigAsync(ChannelConfigViewModel channel)
+    {
+        if (_agentService == null) return;
+
+        try
+        {
+            var config = await _agentService.GetChannelLLMConfigAsync(channel.Type);
+            if (config != null)
+            {
+                channel.SelectedProvider = config.Provider;
+                channel.SelectedModel = config.Model;
+                channel.Temperature = config.Temperature;
+                channel.MaxTokens = config.MaxTokens;
+            }
+            else
+            {
+                // Default to Ollama
+                channel.SelectedProvider = LLMProviderType.Ollama;
+                channel.SelectedModel = "";
+                channel.Temperature = 0.7;
+                channel.MaxTokens = 1024;
+            }
+        }
+        catch (Exception ex)
+        {
+            _debugService?.Error("ChannelsVM", $"Failed to load LLM config for {channel.Name}", ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task SaveChannelLLMConfig(ChannelConfigViewModel channel)
+    {
+        if (_agentService == null) return;
+
+        try
+        {
+            var config = new ChannelLLMConfig
+            {
+                ChannelType = channel.Type,
+                Provider = channel.SelectedProvider,
+                Model = channel.SelectedModel,
+                Temperature = channel.Temperature,
+                MaxTokens = channel.MaxTokens,
+                IsEnabled = true
+            };
+
+            await _agentService.SaveChannelLLMConfigAsync(config);
+            StatusMessage = $"LLM settings saved for {channel.Name}";
+            _debugService?.Success("ChannelsVM", $"Saved LLM config for {channel.Name}",
+                $"Provider: {config.Provider}, Model: {config.Model}");
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error saving LLM config: {ex.Message}";
+            _debugService?.Error("ChannelsVM", "Failed to save LLM config", ex.Message);
         }
     }
 
@@ -227,6 +379,12 @@ public partial class ChannelsViewModel : ObservableObject
                     });
                 }
             }
+
+            // Update IsAssigned status for available agents based on this channel's assignments
+            foreach (var agent in AvailableAgents)
+            {
+                agent.IsAssigned = assignedIds.Contains(agent.AgentId);
+            }
         }
         catch (Exception ex)
         {
@@ -244,15 +402,29 @@ public partial class ChannelsViewModel : ObservableObject
             var priority = SelectedChannel.AssignedAgents.Count;
             await _agentService.AssignAgentToChannelAsync(agent.AgentId, SelectedChannel.Type, priority);
 
+            // Create a new assignment entry for the channel
+            var assignedAgent = new AgentAssignmentViewModel
+            {
+                AgentId = agent.AgentId,
+                AgentName = agent.AgentName,
+                AgentIcon = agent.AgentIcon,
+                DocumentCount = agent.DocumentCount,
+                IsAssigned = true,
+                Priority = priority
+            };
+
+            SelectedChannel.AssignedAgents.Add(assignedAgent);
+
+            // Update IsAssigned in AvailableAgents so right sidebar shows "Assigned"
             agent.IsAssigned = true;
-            agent.Priority = priority;
-            SelectedChannel.AssignedAgents.Add(agent);
 
             StatusMessage = $"Assigned '{agent.AgentName}' to {SelectedChannel.Name}";
+            _debugService?.Success("ChannelsVM", $"Assigned '{agent.AgentName}' to {SelectedChannel.Name}");
         }
         catch (Exception ex)
         {
             StatusMessage = $"Error: {ex.Message}";
+            _debugService?.Error("ChannelsVM", "Failed to assign agent", ex.Message);
         }
     }
 
@@ -265,14 +437,27 @@ public partial class ChannelsViewModel : ObservableObject
         {
             await _agentService.UnassignAgentFromChannelAsync(agent.AgentId, SelectedChannel.Type);
 
-            agent.IsAssigned = false;
-            SelectedChannel.AssignedAgents.Remove(agent);
+            // Remove from assigned agents
+            var toRemove = SelectedChannel.AssignedAgents.FirstOrDefault(a => a.AgentId == agent.AgentId);
+            if (toRemove != null)
+            {
+                SelectedChannel.AssignedAgents.Remove(toRemove);
+            }
+
+            // Update IsAssigned in AvailableAgents so right sidebar shows "Assign" button
+            var availableAgent = AvailableAgents.FirstOrDefault(a => a.AgentId == agent.AgentId);
+            if (availableAgent != null)
+            {
+                availableAgent.IsAssigned = false;
+            }
 
             StatusMessage = $"Removed '{agent.AgentName}' from {SelectedChannel.Name}";
+            _debugService?.Info("ChannelsVM", $"Unassigned '{agent.AgentName}' from {SelectedChannel.Name}");
         }
         catch (Exception ex)
         {
             StatusMessage = $"Error: {ex.Message}";
+            _debugService?.Error("ChannelsVM", "Failed to unassign agent", ex.Message);
         }
     }
 
@@ -421,6 +606,78 @@ public partial class ChannelsViewModel : ObservableObject
         });
     }
 
+    private void OnViberConnectionStatusChanged(object? sender, ViberConnectionStatus status)
+    {
+        Application.Current?.Dispatcher?.Invoke(() =>
+        {
+            var viberChannel = Channels.FirstOrDefault(c => c.Type == ChannelType.Viber);
+            if (viberChannel == null) return;
+
+            viberChannel.IsConnected = status.IsConnected;
+            viberChannel.IsConnecting = false;
+
+            if (status.IsConnected)
+            {
+                ViberStatus = $"Connected: {status.BotName}";
+                StatusMessage = $"Viber connected as {status.BotName}";
+                _debugService?.Success("Viber", $"Connected as {status.BotName}");
+            }
+            else
+            {
+                ViberStatus = "Disconnected";
+                StatusMessage = "Viber disconnected";
+            }
+        });
+    }
+
+    private void OnLineConnectionStatusChanged(object? sender, LineConnectionStatus status)
+    {
+        Application.Current?.Dispatcher?.Invoke(() =>
+        {
+            var lineChannel = Channels.FirstOrDefault(c => c.Type == ChannelType.Line);
+            if (lineChannel == null) return;
+
+            lineChannel.IsConnected = status.IsConnected;
+            lineChannel.IsConnecting = false;
+
+            if (status.IsConnected)
+            {
+                LineStatus = $"Connected: {status.BotName}";
+                StatusMessage = $"LINE connected as {status.BotName}";
+                _debugService?.Success("LINE", $"Connected as {status.BotName}");
+            }
+            else
+            {
+                LineStatus = "Disconnected";
+                StatusMessage = "LINE disconnected";
+            }
+        });
+    }
+
+    private void OnMessengerConnectionStatusChanged(object? sender, MessengerConnectionStatus status)
+    {
+        Application.Current?.Dispatcher?.Invoke(() =>
+        {
+            var messengerChannel = Channels.FirstOrDefault(c => c.Type == ChannelType.Messenger);
+            if (messengerChannel == null) return;
+
+            messengerChannel.IsConnected = status.IsConnected;
+            messengerChannel.IsConnecting = false;
+
+            if (status.IsConnected)
+            {
+                MessengerStatus = $"Connected: {status.PageName}";
+                StatusMessage = $"Messenger connected as {status.PageName}";
+                _debugService?.Success("Messenger", $"Connected as {status.PageName}");
+            }
+            else
+            {
+                MessengerStatus = "Disconnected";
+                StatusMessage = "Messenger disconnected";
+            }
+        });
+    }
+
     private void OnMessageReceived(object? sender, ChannelMessage message)
     {
         _debugService?.Info("WhatsApp", $"Message received from {message.SenderName}", message.Content);
@@ -465,6 +722,18 @@ public partial class ChannelsViewModel : ObservableObject
 
                 case ChannelType.Slack:
                     await ConnectSlackAsync(channel, config);
+                    break;
+
+                case ChannelType.Viber:
+                    await ConnectViberAsync(channel, config);
+                    break;
+
+                case ChannelType.Line:
+                    await ConnectLineAsync(channel, config);
+                    break;
+
+                case ChannelType.Messenger:
+                    await ConnectMessengerAsync(channel, config);
                     break;
 
                 default:
@@ -519,6 +788,45 @@ public partial class ChannelsViewModel : ObservableObject
 
         SlackStatus = "Connecting...";
         await _slackChannel.ConnectAsync(config);
+    }
+
+    private async Task ConnectViberAsync(ChannelConfigViewModel channel, Dictionary<string, string> config)
+    {
+        if (_viberChannel == null)
+        {
+            StatusMessage = "Viber channel not available";
+            channel.IsConnecting = false;
+            return;
+        }
+
+        ViberStatus = "Connecting...";
+        await _viberChannel.ConnectAsync(config);
+    }
+
+    private async Task ConnectLineAsync(ChannelConfigViewModel channel, Dictionary<string, string> config)
+    {
+        if (_lineChannel == null)
+        {
+            StatusMessage = "LINE channel not available";
+            channel.IsConnecting = false;
+            return;
+        }
+
+        LineStatus = "Connecting...";
+        await _lineChannel.ConnectAsync(config);
+    }
+
+    private async Task ConnectMessengerAsync(ChannelConfigViewModel channel, Dictionary<string, string> config)
+    {
+        if (_messengerChannel == null)
+        {
+            StatusMessage = "Messenger channel not available";
+            channel.IsConnecting = false;
+            return;
+        }
+
+        MessengerStatus = "Connecting...";
+        await _messengerChannel.ConnectAsync(config);
     }
 
     private async Task ConnectWhatsAppAsync(ChannelConfigViewModel channel)
@@ -576,6 +884,21 @@ public partial class ChannelsViewModel : ObservableObject
                 case ChannelType.Slack when _slackChannel != null:
                     await _slackChannel.DisconnectAsync();
                     SlackStatus = "Disconnected";
+                    break;
+
+                case ChannelType.Viber when _viberChannel != null:
+                    await _viberChannel.DisconnectAsync();
+                    ViberStatus = "Disconnected";
+                    break;
+
+                case ChannelType.Line when _lineChannel != null:
+                    await _lineChannel.DisconnectAsync();
+                    LineStatus = "Disconnected";
+                    break;
+
+                case ChannelType.Messenger when _messengerChannel != null:
+                    await _messengerChannel.DisconnectAsync();
+                    MessengerStatus = "Disconnected";
                     break;
 
                 default:
@@ -640,6 +963,19 @@ public partial class ChannelConfigViewModel : ObservableObject
 
     [ObservableProperty]
     private ObservableCollection<AgentAssignmentViewModel> _assignedAgents = [];
+
+    // LLM Configuration for this channel
+    [ObservableProperty]
+    private LLMProviderType _selectedProvider = LLMProviderType.Ollama;
+
+    [ObservableProperty]
+    private string _selectedModel = string.Empty;
+
+    [ObservableProperty]
+    private double _temperature = 0.7;
+
+    [ObservableProperty]
+    private int _maxTokens = 1024;
 }
 
 public partial class ConfigFieldViewModel : ObservableObject
@@ -666,4 +1002,10 @@ public partial class AgentAssignmentViewModel : ObservableObject
 
     [ObservableProperty]
     private int _priority;
+}
+
+public class LLMProviderOption
+{
+    public LLMProviderType Provider { get; set; }
+    public string DisplayName { get; set; } = string.Empty;
 }

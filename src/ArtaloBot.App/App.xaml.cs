@@ -158,6 +158,24 @@ public partial class App : Application
             var debugService = sp.GetRequiredService<IDebugService>();
             return new SlackChannel(httpClientFactory, debugService);
         });
+        services.AddSingleton<ViberChannel>(sp =>
+        {
+            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+            var debugService = sp.GetRequiredService<IDebugService>();
+            return new ViberChannel(httpClientFactory, debugService);
+        });
+        services.AddSingleton<LineChannel>(sp =>
+        {
+            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+            var debugService = sp.GetRequiredService<IDebugService>();
+            return new LineChannel(httpClientFactory, debugService);
+        });
+        services.AddSingleton<MessengerChannel>(sp =>
+        {
+            var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+            var debugService = sp.GetRequiredService<IDebugService>();
+            return new MessengerChannel(httpClientFactory, debugService);
+        });
 
         // ViewModels
         services.AddTransient<MainViewModel>();
@@ -220,6 +238,9 @@ public partial class App : Application
         channelManager?.RegisterProvider(_host.Services.GetRequiredService<TelegramChannel>());
         channelManager?.RegisterProvider(_host.Services.GetRequiredService<DiscordChannel>());
         channelManager?.RegisterProvider(_host.Services.GetRequiredService<SlackChannel>());
+        channelManager?.RegisterProvider(_host.Services.GetRequiredService<ViberChannel>());
+        channelManager?.RegisterProvider(_host.Services.GetRequiredService<LineChannel>());
+        channelManager?.RegisterProvider(_host.Services.GetRequiredService<MessengerChannel>());
 
         // Set up AI handler for channel messages
         if (channelManager != null)
@@ -309,6 +330,7 @@ public partial class App : Application
     /// <summary>
     /// Process incoming channel messages with the AI and return a response.
     /// Uses agent knowledge if a default agent is configured.
+    /// Uses channel-specific LLM configuration if available.
     /// </summary>
     private async Task<string> ProcessChannelMessageAsync(Core.Models.ChannelMessage message)
     {
@@ -318,41 +340,68 @@ public partial class App : Application
 
         try
         {
-            debugService.Info("WhatsApp", $"[START] Processing message from {message.SenderName}",
+            debugService.Info("Channel", $"[START] Processing message from {message.SenderName} via {message.ChannelType}",
                 $"Content: {message.Content}");
 
-            // Step 1: Initialize LLM service
-            stepStopwatch.Restart();
-            var llmFactory = _host.Services.GetRequiredService<ILLMServiceFactory>();
-            var service = llmFactory.GetService(Core.Models.LLMProviderType.Ollama);
-
-            if (service == null)
-            {
-                llmFactory.CreateService(Core.Models.LLMProviderType.Ollama, "", "http://localhost:11434");
-                service = llmFactory.GetService(Core.Models.LLMProviderType.Ollama);
-            }
-
-            if (service == null)
-            {
-                debugService.Error("WhatsApp", "LLM service unavailable");
-                return "Sorry, I'm having trouble connecting to my brain. Please try again later.";
-            }
-            debugService.Info("WhatsApp", $"[Step 1] LLM service ready", $"Time: {stepStopwatch.ElapsedMilliseconds}ms");
-
-            // Step 2: Get settings and model
+            // Step 1: Get channel-specific LLM configuration
             stepStopwatch.Restart();
             using var scope = _host.Services.CreateScope();
             var settingsService = scope.ServiceProvider.GetRequiredService<ISettingsService>();
+            var agentService = _host.Services.GetRequiredService<IAgentService>();
+
+            var channelLLMConfig = await agentService.GetChannelLLMConfigAsync(message.ChannelType);
+            var providerType = channelLLMConfig?.Provider ?? Core.Models.LLMProviderType.Ollama;
+            var configuredModel = channelLLMConfig?.Model ?? "";
+            var temperature = channelLLMConfig?.Temperature ?? 0.7;
+            var maxTokens = channelLLMConfig?.MaxTokens ?? 1024;
+
+            debugService.Info("Channel", $"[Step 1] LLM config loaded",
+                $"Provider: {providerType}, Model: {configuredModel}, Temp: {temperature}");
+
+            // Step 2: Initialize LLM service based on channel config
+            stepStopwatch.Restart();
+            var llmFactory = _host.Services.GetRequiredService<ILLMServiceFactory>();
+            var service = llmFactory.GetService(providerType);
+
+            if (service == null)
+            {
+                // Try to create the service with stored API key
+                var apiKey = await GetApiKeyForProviderAsync(settingsService, providerType);
+                var baseUrl = GetBaseUrlForProvider(providerType);
+                llmFactory.CreateService(providerType, apiKey, baseUrl);
+                service = llmFactory.GetService(providerType);
+            }
+
+            if (service == null)
+            {
+                debugService.Error("Channel", $"LLM service unavailable for {providerType}");
+                return "Sorry, I'm having trouble connecting to my brain. Please try again later.";
+            }
+            debugService.Info("Channel", $"[Step 2] LLM service ready ({providerType})", $"Time: {stepStopwatch.ElapsedMilliseconds}ms");
+
+            // Step 3: Get settings and model
+            stepStopwatch.Restart();
             var settings = await settingsService.GetDefaultLLMSettingsAsync();
 
-            var models = await service.GetAvailableModelsAsync();
-            settings.Model = models.FirstOrDefault() ?? "qwen2.5:3b";
-            debugService.Info("WhatsApp", $"[Step 2] Model selected: {settings.Model}", $"Time: {stepStopwatch.ElapsedMilliseconds}ms");
+            // Use channel-configured model, or fall back to first available
+            if (!string.IsNullOrEmpty(configuredModel))
+            {
+                settings.Model = configuredModel;
+            }
+            else
+            {
+                var models = await service.GetAvailableModelsAsync();
+                settings.Model = models.FirstOrDefault() ?? GetDefaultModelForProvider(providerType);
+            }
 
-            // Step 3: Search knowledge base (Vector search)
+            // Apply channel-specific settings
+            settings.Temperature = temperature;
+            settings.MaxTokens = maxTokens;
+            debugService.Info("Channel", $"[Step 3] Model selected: {settings.Model}", $"Time: {stepStopwatch.ElapsedMilliseconds}ms");
+
+            // Step 4: Search knowledge base (Vector search)
             stepStopwatch.Restart();
-            var agentService = _host.Services.GetRequiredService<IAgentService>();
-            debugService.Info("WhatsApp", "[Step 3] Starting vector search...");
+            debugService.Info("Channel", "[Step 4] Starting vector search...");
 
             var searchResults = await agentService.SearchChannelKnowledgeAsync(
                 message.ChannelType,
@@ -365,8 +414,8 @@ public partial class App : Application
 
             if (searchResults.Count > 0)
             {
-                debugService.Success("WhatsApp",
-                    $"[Step 3] Vector search complete: {searchResults.Count} chunks found",
+                debugService.Success("Channel",
+                    $"[Step 4] Vector search complete: {searchResults.Count} chunks found",
                     $"Time: {vectorSearchTime}ms | Best match: {searchResults[0].Similarity:F3} from {searchResults[0].AgentName}");
 
                 knowledgeContext = "\n\n--- RELEVANT KNOWLEDGE ---\n";
@@ -378,11 +427,11 @@ public partial class App : Application
             }
             else
             {
-                debugService.Warning("WhatsApp", $"[Step 3] No relevant knowledge found",
+                debugService.Warning("Channel", $"[Step 4] No relevant knowledge found",
                     $"Time: {vectorSearchTime}ms | Assigned agents: {assignedAgents.Count}");
             }
 
-            // Step 4: Build system prompt
+            // Step 5: Build system prompt
             stepStopwatch.Restart();
             string systemPrompt;
 
@@ -390,7 +439,7 @@ public partial class App : Application
             {
                 // We have knowledge - use knowledge-first prompt
                 var agentNames = string.Join(", ", assignedAgents.Select(a => a.Name));
-                debugService.Info("WhatsApp", $"[Step 4] Using knowledge-first mode with agents: {agentNames}");
+                debugService.Info("Channel", $"[Step 5] Using knowledge-first mode with agents: {agentNames}");
 
                 systemPrompt = $@"You are a helpful AI assistant responding via {message.ChannelType} to {message.SenderName}.
 
@@ -421,7 +470,7 @@ RULES:
             else if (assignedAgents.Count > 0)
             {
                 // Agents assigned but no knowledge found
-                debugService.Warning("WhatsApp", "[Step 4] Agents assigned but no relevant knowledge found");
+                debugService.Warning("Channel", "[Step 5] Agents assigned but no relevant knowledge found");
 
                 systemPrompt = $@"You are ArtaloBot, a helpful AI assistant responding via {message.ChannelType}.
 You are chatting with {message.SenderName}.
@@ -446,12 +495,12 @@ You can respond in Hindi, English, or Hinglish based on the user's language.";
             }
 
             settings.SystemPrompt = systemPrompt;
-            debugService.Info("WhatsApp", $"[Step 4] Prompt built",
+            debugService.Info("Channel", $"[Step 5] Prompt built",
                 $"Time: {stepStopwatch.ElapsedMilliseconds}ms | Prompt length: {systemPrompt.Length} chars");
 
-            // Step 5: Generate AI response
+            // Step 6: Generate AI response
             stepStopwatch.Restart();
-            debugService.Info("WhatsApp", "[Step 5] Generating AI response...");
+            debugService.Info("Channel", $"[Step 6] Generating AI response using {providerType}...");
 
             var messages = new List<Core.Models.ChatMessage>
             {
@@ -466,11 +515,11 @@ You can respond in Hindi, English, or Hinglish based on the user's language.";
             var llmTime = stepStopwatch.ElapsedMilliseconds;
 
             totalStopwatch.Stop();
-            debugService.Success("WhatsApp",
+            debugService.Success("Channel",
                 $"[COMPLETE] Response generated in {totalStopwatch.ElapsedMilliseconds}ms",
-                $"Vector: {vectorSearchTime}ms | LLM: {llmTime}ms | Response: {response.Length} chars");
+                $"Provider: {providerType} | Model: {settings.Model} | Vector: {vectorSearchTime}ms | LLM: {llmTime}ms | Response: {response.Length} chars");
 
-            debugService.Info("WhatsApp", "Response preview",
+            debugService.Info("Channel", "Response preview",
                 response.Length > 200 ? response[..200] + "..." : response);
 
             return response;
@@ -478,9 +527,42 @@ You can respond in Hindi, English, or Hinglish based on the user's language.";
         catch (Exception ex)
         {
             totalStopwatch.Stop();
-            debugService.Error("WhatsApp", $"[ERROR] Failed after {totalStopwatch.ElapsedMilliseconds}ms", ex.Message);
+            debugService.Error("Channel", $"[ERROR] Failed after {totalStopwatch.ElapsedMilliseconds}ms", ex.Message);
             return "Sorry, I encountered an error processing your message. Please try again.";
         }
+    }
+
+    private static async Task<string> GetApiKeyForProviderAsync(ISettingsService settingsService, Core.Models.LLMProviderType provider)
+    {
+        return provider switch
+        {
+            Core.Models.LLMProviderType.OpenAI => await settingsService.GetAsync<string>("openai_api_key") ?? "",
+            Core.Models.LLMProviderType.Gemini => await settingsService.GetAsync<string>("gemini_api_key") ?? "",
+            Core.Models.LLMProviderType.Ollama => "",  // Ollama doesn't need API key
+            _ => ""
+        };
+    }
+
+    private static string GetBaseUrlForProvider(Core.Models.LLMProviderType provider)
+    {
+        return provider switch
+        {
+            Core.Models.LLMProviderType.Ollama => "http://localhost:11434",
+            Core.Models.LLMProviderType.OpenAI => "https://api.openai.com/v1",
+            Core.Models.LLMProviderType.Gemini => "https://generativelanguage.googleapis.com",
+            _ => ""
+        };
+    }
+
+    private static string GetDefaultModelForProvider(Core.Models.LLMProviderType provider)
+    {
+        return provider switch
+        {
+            Core.Models.LLMProviderType.Ollama => "qwen2.5:3b",
+            Core.Models.LLMProviderType.OpenAI => "gpt-4o-mini",
+            Core.Models.LLMProviderType.Gemini => "gemini-1.5-flash",
+            _ => "qwen2.5:3b"
+        };
     }
 
     protected override async void OnExit(ExitEventArgs e)
@@ -675,6 +757,19 @@ You can respond in Hindi, English, or Hinglish based on the user's language.";
                 );
                 CREATE INDEX IF NOT EXISTS IX_AgentSkills_AgentId ON AgentSkills (AgentId);
                 CREATE INDEX IF NOT EXISTS IX_AgentSkills_SkillType ON AgentSkills (SkillType);
+
+                CREATE TABLE IF NOT EXISTS ChannelLLMConfigs (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ChannelType INTEGER NOT NULL UNIQUE,
+                    Provider INTEGER NOT NULL DEFAULT 2,
+                    Model TEXT DEFAULT '',
+                    Temperature REAL NOT NULL DEFAULT 0.7,
+                    MaxTokens INTEGER NOT NULL DEFAULT 1024,
+                    IsEnabled INTEGER NOT NULL DEFAULT 1,
+                    CreatedAt TEXT NOT NULL,
+                    UpdatedAt TEXT NOT NULL
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS IX_ChannelLLMConfigs_ChannelType ON ChannelLLMConfigs (ChannelType);
                 """;
             await createCommand.ExecuteNonQueryAsync();
 

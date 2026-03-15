@@ -59,16 +59,28 @@
                           FontSize="13"
                           VerticalContentAlignment="Center" />
 
-                <!-- Model Selector -->
+                <!-- Model Selector (only for Ollama) -->
                 <ComboBox Grid.Row="0" Grid.Column="2"
                           ItemsSource="{Binding AvailableModels}"
                           SelectedItem="{Binding SelectedModel}"
+                          IsEnabled="{Binding IsOllamaSelected}"
                           MinWidth="160"
                           Height="36"
                           Margin="0,0,12,0"
                           Padding="12,0"
                           FontSize="13"
-                          VerticalContentAlignment="Center" />
+                          VerticalContentAlignment="Center">
+                    <ComboBox.Style>
+                        <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                            <Setter Property="ToolTip" Value="Select Ollama model" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsOllamaSelected}" Value="False">
+                                    <Setter Property="ToolTip" Value="Model selection only available for Ollama. Other providers use their default model." />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ComboBox.Style>
+                </ComboBox>
 
                 <!-- Clear Button -->
                 <Button Grid.Row="0" Grid.Column="3"

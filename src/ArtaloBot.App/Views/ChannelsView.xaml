@@ -11,6 +11,7 @@
     <UserControl.Resources>
         <converters:BoolToVisibilityConverter x:Key="BoolToVis" />
         <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis" />
+        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
     </UserControl.Resources>
 
     <Grid>
@@ -105,62 +106,140 @@
                                     <StackPanel Grid.Row="1"
                                                 Visibility="{Binding IsComingSoon, Converter={StaticResource InverseBoolToVis}}"
                                                 Margin="0,0,0,16">
-                                        <TextBlock Text="Assigned Agents"
-                                                   Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
-                                                   Margin="0,0,0,8" />
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
 
-                                        <!-- No agents assigned message -->
-                                        <TextBlock Text="No agents assigned. Messages will use general AI responses."
-                                                   Opacity="0.5"
-                                                   FontStyle="Italic"
-                                                   Margin="0,0,0,8">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignBody2TextBlock}">
-                                                    <Setter Property="Visibility" Value="Collapsed" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding AssignedAgents.Count}" Value="0">
-                                                            <Setter Property="Visibility" Value="Visible" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
+                                            <!-- Left: Assigned Agents -->
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="Assigned Agents"
+                                                           Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                                           Margin="0,0,0,8" />
 
-                                        <!-- Assigned agents list -->
-                                        <ItemsControl ItemsSource="{Binding AssignedAgents}">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <WrapPanel Orientation="Horizontal" />
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Border Background="{DynamicResource PrimaryHueLightBrush}"
-                                                            CornerRadius="16"
-                                                            Padding="12,6"
-                                                            Margin="0,0,8,8">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <materialDesign:PackIcon Kind="{Binding AgentIcon}"
-                                                                                     Width="16" Height="16"
-                                                                                     Margin="0,0,6,0"
-                                                                                     VerticalAlignment="Center" />
-                                                            <TextBlock Text="{Binding AgentName}"
-                                                                       VerticalAlignment="Center"
-                                                                       FontWeight="Medium" />
-                                                            <Button Style="{StaticResource MaterialDesignIconForegroundButton}"
-                                                                    Width="20" Height="20"
-                                                                    Margin="6,0,0,0"
-                                                                    Padding="0"
-                                                                    ToolTip="Remove agent"
-                                                                    Command="{Binding DataContext.UnassignAgentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                                    CommandParameter="{Binding}">
-                                                                <materialDesign:PackIcon Kind="Close" Width="14" Height="14" />
-                                                            </Button>
-                                                        </StackPanel>
-                                                    </Border>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
+                                                <!-- No agents assigned message -->
+                                                <TextBlock Text="No agents assigned. Messages will use general AI responses."
+                                                           Opacity="0.5"
+                                                           FontStyle="Italic"
+                                                           Margin="0,0,0,8">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignBody2TextBlock}">
+                                                            <Setter Property="Visibility" Value="Collapsed" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding AssignedAgents.Count}" Value="0">
+                                                                    <Setter Property="Visibility" Value="Visible" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+
+                                                <!-- Assigned agents list -->
+                                                <ItemsControl ItemsSource="{Binding AssignedAgents}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <WrapPanel Orientation="Horizontal" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Background="{DynamicResource PrimaryHueLightBrush}"
+                                                                    CornerRadius="16"
+                                                                    Padding="12,6"
+                                                                    Margin="0,0,8,8">
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <materialDesign:PackIcon Kind="{Binding AgentIcon}"
+                                                                                             Width="16" Height="16"
+                                                                                             Margin="0,0,6,0"
+                                                                                             VerticalAlignment="Center" />
+                                                                    <TextBlock Text="{Binding AgentName}"
+                                                                               VerticalAlignment="Center"
+                                                                               FontWeight="Medium" />
+                                                                    <Button Style="{StaticResource MaterialDesignIconForegroundButton}"
+                                                                            Width="20" Height="20"
+                                                                            Margin="6,0,0,0"
+                                                                            Padding="0"
+                                                                            ToolTip="Remove agent"
+                                                                            Command="{Binding DataContext.UnassignAgentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                            CommandParameter="{Binding}">
+                                                                        <materialDesign:PackIcon Kind="Close" Width="14" Height="14" />
+                                                                    </Button>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+
+                                            <!-- Separator -->
+                                            <Border Grid.Column="1" Width="1" Background="{DynamicResource MaterialDesignDivider}" Margin="16,0" />
+
+                                            <!-- Right: LLM Configuration -->
+                                            <StackPanel Grid.Column="2">
+                                                <TextBlock Text="LLM Provider"
+                                                           Style="{StaticResource MaterialDesignSubtitle2TextBlock}"
+                                                           Margin="0,0,0,8" />
+
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+
+                                                    <!-- Provider Selection -->
+                                                    <ComboBox Grid.Row="0" Grid.Column="0"
+                                                              materialDesign:HintAssist.Hint="Provider"
+                                                              Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                                              ItemsSource="{Binding DataContext.AvailableLLMProviders, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                              SelectedValue="{Binding SelectedProvider}"
+                                                              SelectedValuePath="Provider"
+                                                              DisplayMemberPath="DisplayName"
+                                                              Margin="0,0,8,8" />
+
+                                                    <!-- Model Selection -->
+                                                    <TextBox Grid.Row="0" Grid.Column="1"
+                                                             materialDesign:HintAssist.Hint="Model"
+                                                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                                             Text="{Binding SelectedModel, UpdateSourceTrigger=PropertyChanged}"
+                                                             Margin="0,0,0,8" />
+
+                                                    <!-- Temperature -->
+                                                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,8">
+                                                        <TextBlock Text="{Binding Temperature, StringFormat='Temperature: {0:F1}'}"
+                                                                   Style="{StaticResource MaterialDesignBody2TextBlock}"
+                                                                   Opacity="0.7"
+                                                                   Margin="0,0,0,4" />
+                                                        <Slider Minimum="0" Maximum="2"
+                                                                Value="{Binding Temperature}"
+                                                                TickFrequency="0.1"
+                                                                IsSnapToTickEnabled="True" />
+                                                    </StackPanel>
+
+                                                    <!-- Max Tokens -->
+                                                    <TextBox Grid.Row="1" Grid.Column="1"
+                                                             materialDesign:HintAssist.Hint="Max Tokens"
+                                                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                                             Text="{Binding MaxTokens, UpdateSourceTrigger=PropertyChanged}"
+                                                             Margin="0,0,0,8" />
+
+                                                    <!-- Save Button -->
+                                                    <Button Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                                                            Content="Save LLM Settings"
+                                                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                                                            Command="{Binding DataContext.SaveChannelLLMConfigCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            HorizontalAlignment="Right"
+                                                            Padding="12,4" />
+                                                </Grid>
+                                            </StackPanel>
+                                        </Grid>
                                     </StackPanel>
 
                                     <!-- Configuration Fields (for non-QR channels) -->

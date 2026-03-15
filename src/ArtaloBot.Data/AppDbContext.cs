@@ -15,6 +15,7 @@ public class AppDbContext : DbContext
     public DbSet<AgentChunk> AgentChunks { get; set; } = null!;
     public DbSet<ChannelAgentAssignment> ChannelAgentAssignments { get; set; } = null!;
     public DbSet<AgentSkill> AgentSkills { get; set; } = null!;
+    public DbSet<ChannelLLMConfig> ChannelLLMConfigs { get; set; } = null!;
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -157,6 +158,13 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.AgentId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ChannelLLMConfig>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Model).HasMaxLength(200);
+            entity.HasIndex(e => e.ChannelType).IsUnique();
         });
     }
 }

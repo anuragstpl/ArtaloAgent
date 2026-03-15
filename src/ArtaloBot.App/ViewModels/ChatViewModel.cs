@@ -42,6 +42,7 @@ public partial class ChatViewModel : ObservableObject
     private bool _isStreaming;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsOllamaSelected))]
     private LLMProviderType _selectedProvider = LLMProviderType.Ollama;
 
     [ObservableProperty]
@@ -49,6 +50,11 @@ public partial class ChatViewModel : ObservableObject
 
     [ObservableProperty]
     private ObservableCollection<string> _availableModels = ["llama3.2", "llama3.1", "mistral"];
+
+    /// <summary>
+    /// Returns true if Ollama is selected (model selection applies to Ollama only).
+    /// </summary>
+    public bool IsOllamaSelected => SelectedProvider == LLMProviderType.Ollama;
 
     [ObservableProperty]
     private ChatSession? _currentSession;
@@ -768,7 +774,13 @@ public partial class ChatViewModel : ObservableObject
             if (!string.IsNullOrEmpty(agentKnowledgeContext))
             {
                 systemPromptParts.Add(agentKnowledgeContext);
-                systemPromptParts.Add("IMPORTANT: Base your answer primarily on the knowledge provided above. If the answer isn't in the knowledge, say so.");
+                systemPromptParts.Add(@"CRITICAL INSTRUCTION: You MUST answer ONLY using the knowledge provided above.
+RULES:
+1. ONLY answer using information from the knowledge above - do NOT use your general knowledge
+2. If the answer is clearly in the knowledge, provide it directly and confidently
+3. If the answer is NOT in the knowledge, say: ""I don't have information about that in my knowledge base.""
+4. Quote or reference the source document when possible
+5. Do NOT make up information that isn't in the knowledge above");
             }
 
             // Add tool result context if we executed a tool

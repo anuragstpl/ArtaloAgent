@@ -6,6 +6,7 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:viewModels="clr-namespace:ArtaloBot.App.ViewModels"
         xmlns:views="clr-namespace:ArtaloBot.App.Views"
+        xmlns:converters="clr-namespace:ArtaloBot.App.Converters"
         mc:Ignorable="d"
         Title="ArtaloBot"
         Height="750" Width="1100"
@@ -30,15 +31,18 @@
         <DataTemplate DataType="{x:Type viewModels:AgentsViewModel}">
             <views:AgentsView />
         </DataTemplate>
+
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
     </Window.Resources>
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="280" />
+            <ColumnDefinition Width="260" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <!-- Left Sidebar -->
+        <!-- Left Sidebar - Clean White -->
         <Border Grid.Column="0"
                 Background="{StaticResource SurfaceBrush}"
                 BorderBrush="{StaticResource BorderBrush}"
@@ -47,14 +51,15 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <!-- App Header -->
-                <StackPanel Grid.Row="0" Margin="16,20,16,16">
+                <StackPanel Grid.Row="0" Margin="20,24,20,20">
                     <StackPanel Orientation="Horizontal">
-                        <Border Width="40" Height="40" CornerRadius="8" Background="{StaticResource AccentBrush}" Margin="0,0,12,0">
+                        <Border Width="42" Height="42" CornerRadius="10" Background="{StaticResource AccentBrush}" Margin="0,0,12,0">
                             <materialDesign:PackIcon Kind="Robot" Width="24" Height="24"
                                                      Foreground="White"
                                                      HorizontalAlignment="Center"
@@ -76,84 +81,342 @@
                 <Button Grid.Row="1"
                         Style="{StaticResource Win11PrimaryButton}"
                         Command="{Binding NewChatCommand}"
-                        Margin="16,0,16,16"
-                        Height="40">
+                        Margin="16,0,16,20"
+                        Height="42">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="Plus" Width="18" Height="18" Margin="0,0,8,0" VerticalAlignment="Center" />
                         <TextBlock Text="New Chat" VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
 
-                <!-- Navigation -->
+                <!-- Navigation Menu -->
                 <StackPanel Grid.Row="2" Margin="8,0">
-                    <Button Style="{StaticResource Win11NavButton}"
-                            Command="{Binding NavigateToChatCommand}"
-                            Margin="0,2">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="Chat" Width="20" Height="20"
-                                                     Foreground="{StaticResource AccentBrush}"
-                                                     Margin="0,0,12,0" VerticalAlignment="Center" />
-                            <TextBlock Text="Chat" FontSize="14" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
+                    <!-- Chat -->
+                    <Border x:Name="ChatNavItem" CornerRadius="8" Margin="0,2" Cursor="Hand"
+                            MouseLeftButtonDown="OnChatTileClick">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Padding" Value="12,10"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedNavIndex}" Value="0">
+                                        <Setter Property="Background" Value="{StaticResource AccentLightBrush}"/>
+                                    </DataTrigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource SurfaceLightBrush}"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <!-- Selection Indicator -->
+                            <Border Width="3" Height="20" CornerRadius="2" Margin="-12,0,12,0" HorizontalAlignment="Left">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedNavIndex}" Value="0">
+                                                <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                            </Border>
+                            <materialDesign:PackIcon Grid.Column="0" Kind="Chat" Width="20" Height="20" Margin="0,0,12,0" VerticalAlignment="Center">
+                                <materialDesign:PackIcon.Style>
+                                    <Style TargetType="materialDesign:PackIcon">
+                                        <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedNavIndex}" Value="0">
+                                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </materialDesign:PackIcon.Style>
+                            </materialDesign:PackIcon>
+                            <TextBlock Grid.Column="1" Text="Chat" FontSize="14" VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedNavIndex}" Value="0">
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                    </Border>
 
-                    <Button Style="{StaticResource Win11NavButton}"
-                            Command="{Binding NavigateToSettingsCommand}"
-                            Margin="0,2">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="Cog" Width="20" Height="20"
-                                                     Foreground="{StaticResource TextSecondaryBrush}"
-                                                     Margin="0,0,12,0" VerticalAlignment="Center" />
-                            <TextBlock Text="Settings" FontSize="14" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
+                    <!-- Settings -->
+                    <Border CornerRadius="8" Margin="0,2" Cursor="Hand"
+                            MouseLeftButtonDown="OnSettingsTileClick">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Padding" Value="12,10"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedNavIndex}" Value="1">
+                                        <Setter Property="Background" Value="{StaticResource AccentLightBrush}"/>
+                                    </DataTrigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource SurfaceLightBrush}"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Width="3" Height="20" CornerRadius="2" Margin="-12,0,12,0" HorizontalAlignment="Left">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedNavIndex}" Value="1">
+                                                <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                            </Border>
+                            <materialDesign:PackIcon Grid.Column="0" Kind="Cog" Width="20" Height="20" Margin="0,0,12,0" VerticalAlignment="Center">
+                                <materialDesign:PackIcon.Style>
+                                    <Style TargetType="materialDesign:PackIcon">
+                                        <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedNavIndex}" Value="1">
+                                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </materialDesign:PackIcon.Style>
+                            </materialDesign:PackIcon>
+                            <TextBlock Grid.Column="1" Text="Settings" FontSize="14" VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedNavIndex}" Value="1">
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                    </Border>
 
-                    <Button Style="{StaticResource Win11NavButton}"
-                            Command="{Binding NavigateToMCPCommand}"
-                            Margin="0,2">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="Puzzle" Width="20" Height="20"
-                                                     Foreground="{StaticResource TextSecondaryBrush}"
-                                                     Margin="0,0,12,0" VerticalAlignment="Center" />
-                            <TextBlock Text="Skills" FontSize="14" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
+                    <!-- Skills -->
+                    <Border CornerRadius="8" Margin="0,2" Cursor="Hand"
+                            MouseLeftButtonDown="OnSkillsTileClick">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Padding" Value="12,10"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedNavIndex}" Value="2">
+                                        <Setter Property="Background" Value="{StaticResource AccentLightBrush}"/>
+                                    </DataTrigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource SurfaceLightBrush}"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Width="3" Height="20" CornerRadius="2" Margin="-12,0,12,0" HorizontalAlignment="Left">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedNavIndex}" Value="2">
+                                                <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                            </Border>
+                            <materialDesign:PackIcon Grid.Column="0" Kind="Puzzle" Width="20" Height="20" Margin="0,0,12,0" VerticalAlignment="Center">
+                                <materialDesign:PackIcon.Style>
+                                    <Style TargetType="materialDesign:PackIcon">
+                                        <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedNavIndex}" Value="2">
+                                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </materialDesign:PackIcon.Style>
+                            </materialDesign:PackIcon>
+                            <TextBlock Grid.Column="1" Text="Skills" FontSize="14" VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedNavIndex}" Value="2">
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                    </Border>
 
-                    <Button Style="{StaticResource Win11NavButton}"
-                            Command="{Binding NavigateToChannelsCommand}"
-                            Margin="0,2">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="Forum" Width="20" Height="20"
-                                                     Foreground="{StaticResource TextSecondaryBrush}"
-                                                     Margin="0,0,12,0" VerticalAlignment="Center" />
-                            <TextBlock Text="Channels" FontSize="14" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
+                    <!-- Channels -->
+                    <Border CornerRadius="8" Margin="0,2" Cursor="Hand"
+                            MouseLeftButtonDown="OnChannelsTileClick">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Padding" Value="12,10"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedNavIndex}" Value="3">
+                                        <Setter Property="Background" Value="{StaticResource AccentLightBrush}"/>
+                                    </DataTrigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource SurfaceLightBrush}"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Width="3" Height="20" CornerRadius="2" Margin="-12,0,12,0" HorizontalAlignment="Left">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedNavIndex}" Value="3">
+                                                <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                            </Border>
+                            <materialDesign:PackIcon Grid.Column="0" Kind="Forum" Width="20" Height="20" Margin="0,0,12,0" VerticalAlignment="Center">
+                                <materialDesign:PackIcon.Style>
+                                    <Style TargetType="materialDesign:PackIcon">
+                                        <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedNavIndex}" Value="3">
+                                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </materialDesign:PackIcon.Style>
+                            </materialDesign:PackIcon>
+                            <TextBlock Grid.Column="1" Text="Channels" FontSize="14" VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedNavIndex}" Value="3">
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                    </Border>
 
-                    <Button Style="{StaticResource Win11NavButton}"
-                            Command="{Binding NavigateToAgentsCommand}"
-                            Margin="0,2">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="AccountMultiple" Width="20" Height="20"
-                                                     Foreground="{StaticResource TextSecondaryBrush}"
-                                                     Margin="0,0,12,0" VerticalAlignment="Center" />
-                            <TextBlock Text="Agents" FontSize="14" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
+                    <!-- Agents -->
+                    <Border CornerRadius="8" Margin="0,2" Cursor="Hand"
+                            MouseLeftButtonDown="OnAgentsTileClick">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Padding" Value="12,10"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedNavIndex}" Value="4">
+                                        <Setter Property="Background" Value="{StaticResource AccentLightBrush}"/>
+                                    </DataTrigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource SurfaceLightBrush}"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Width="3" Height="20" CornerRadius="2" Margin="-12,0,12,0" HorizontalAlignment="Left">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedNavIndex}" Value="4">
+                                                <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                            </Border>
+                            <materialDesign:PackIcon Grid.Column="0" Kind="AccountMultiple" Width="20" Height="20" Margin="0,0,12,0" VerticalAlignment="Center">
+                                <materialDesign:PackIcon.Style>
+                                    <Style TargetType="materialDesign:PackIcon">
+                                        <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedNavIndex}" Value="4">
+                                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </materialDesign:PackIcon.Style>
+                            </materialDesign:PackIcon>
+                            <TextBlock Grid.Column="1" Text="Agents" FontSize="14" VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SelectedNavIndex}" Value="4">
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                    </Border>
+                </StackPanel>
 
-                    <!-- Recent Chats Section -->
+                <!-- Recent Chats Section -->
+                <StackPanel Grid.Row="3" Margin="8,24,8,0">
                     <TextBlock Text="Recent"
                                FontSize="12"
                                FontWeight="SemiBold"
                                Foreground="{StaticResource TextSecondaryBrush}"
-                               Margin="12,24,12,8" />
+                               Margin="12,0,12,8" />
 
                     <ListBox ItemsSource="{Binding SessionsViewModel.Sessions}"
                              SelectedItem="{Binding SessionsViewModel.SelectedSession}"
                              Background="Transparent"
                              BorderThickness="0"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                             MaxHeight="300">
+                             MaxHeight="280">
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="Padding" Value="12,10" />
@@ -170,7 +433,7 @@
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter Property="Background" TargetName="border" Value="#E8E8E8" />
+                                                    <Setter Property="Background" TargetName="border" Value="{StaticResource SurfaceLightBrush}" />
                                                 </Trigger>
                                                 <Trigger Property="IsSelected" Value="True">
                                                     <Setter Property="Background" TargetName="border" Value="{StaticResource AccentLightBrush}" />
@@ -205,34 +468,59 @@
                 </StackPanel>
 
                 <!-- Bottom Actions -->
-                <StackPanel Grid.Row="3" Margin="8,16">
-                    <Button Style="{StaticResource Win11NavButton}"
-                            Command="{Binding OpenDebugWindowCommand}"
-                            Margin="0,2">
-                        <StackPanel Orientation="Horizontal">
+                <StackPanel Grid.Row="4" Margin="8,16">
+                    <Border CornerRadius="6" Margin="0,2" Cursor="Hand"
+                            Background="Transparent"
+                            MouseLeftButtonDown="OnDebugTileClick">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource SurfaceLightBrush}"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Grid Margin="12,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
                             <materialDesign:PackIcon Kind="Bug" Width="20" Height="20"
                                                      Foreground="{StaticResource TextSecondaryBrush}"
                                                      Margin="0,0,12,0" VerticalAlignment="Center" />
-                            <TextBlock Text="Debug Console" FontSize="14" VerticalAlignment="Center" />
-                            <Border Background="#107C10"
-                                    CornerRadius="8"
-                                    Padding="6,2"
-                                    Margin="8,0,0,0"
+                            <TextBlock Grid.Column="1" Text="Debug Console" FontSize="14"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       VerticalAlignment="Center" />
+                            <Border Grid.Column="2" Background="#10B981" CornerRadius="4" Padding="6,2"
                                     Visibility="{Binding IsDebugWindowOpen, Converter={StaticResource BoolToVisibilityConverter}}">
                                 <TextBlock Text="OPEN" FontSize="9" FontWeight="Bold" Foreground="White" />
                             </Border>
-                        </StackPanel>
-                    </Button>
-                    <Button Style="{StaticResource Win11NavButton}"
-                            Command="{Binding ToggleThemeCommand}"
-                            Margin="0,2">
-                        <StackPanel Orientation="Horizontal">
+                        </Grid>
+                    </Border>
+
+                    <Border CornerRadius="6" Margin="0,2" Cursor="Hand"
+                            Background="Transparent"
+                            MouseLeftButtonDown="OnThemeTileClick">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource SurfaceLightBrush}"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel Orientation="Horizontal" Margin="12,10">
                             <materialDesign:PackIcon Kind="Brightness6" Width="20" Height="20"
                                                      Foreground="{StaticResource TextSecondaryBrush}"
                                                      Margin="0,0,12,0" VerticalAlignment="Center" />
-                            <TextBlock Text="Toggle Theme" FontSize="14" VerticalAlignment="Center" />
+                            <TextBlock Text="Toggle Theme" FontSize="14"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       VerticalAlignment="Center" />
                         </StackPanel>
-                    </Button>
+                    </Border>
                 </StackPanel>
             </Grid>
         </Border>
