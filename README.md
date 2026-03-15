@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <a href="https://drive.google.com/file/d/12VQDY87U3sYMmMaklxu6ejkuKkDt8QDx/view?usp=sharing">
+  <a href="https://drive.google.com/file/d/1mvZvmdXb5rX4mN5BrpGiMvQ4OT_qSNOB/view?usp=sharing">
     <img src="https://img.shields.io/badge/Download-Windows%20Installer-blue?style=for-the-badge&logo=windows" alt="Download"/>
   </a>
 </p>
@@ -200,7 +200,7 @@ Monitor and troubleshoot application activity:
 ### Option 1: Download Pre-built Installer (Recommended)
 
 <p align="center">
-  <a href="https://drive.google.com/file/d/12VQDY87U3sYMmMaklxu6ejkuKkDt8QDx/view?usp=sharing">
+  <a href="https://drive.google.com/file/d/1mvZvmdXb5rX4mN5BrpGiMvQ4OT_qSNOB/view?usp=sharing">
     <strong>Download ArtaloBot Installer (Google Drive)</strong>
   </a>
 </p>
