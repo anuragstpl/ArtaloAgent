@@ -1,0 +1,221 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Logo Gradients -->
+    <LinearGradientBrush x:Key="LogoHeadGradient" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#667eea" Offset="0"/>
+        <GradientStop Color="#764ba2" Offset="0.5"/>
+        <GradientStop Color="#f093fb" Offset="1"/>
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="LogoAccentGradient" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#4facfe" Offset="0"/>
+        <GradientStop Color="#00f2fe" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- Main Logo Drawing -->
+    <DrawingImage x:Key="ArtaloLogo">
+        <DrawingImage.Drawing>
+            <DrawingGroup>
+                <!-- Background circle -->
+                <GeometryDrawing>
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="256,256" RadiusX="240" RadiusY="240"/>
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Brush>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#667eea" Offset="0"/>
+                            <GradientStop Color="#764ba2" Offset="0.5"/>
+                            <GradientStop Color="#f093fb" Offset="1"/>
+                        </LinearGradientBrush>
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+
+                <!-- Robot head (white) -->
+                <GeometryDrawing Brush="#F5F5F5">
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="126,140,260,220" RadiusX="40" RadiusY="40"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Antenna base -->
+                <GeometryDrawing Brush="White">
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="236,100,40,50" RadiusX="8" RadiusY="8"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Antenna ball -->
+                <GeometryDrawing>
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="256,85" RadiusX="22" RadiusY="22"/>
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Brush>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#4facfe" Offset="0"/>
+                            <GradientStop Color="#00f2fe" Offset="1"/>
+                        </LinearGradientBrush>
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+
+                <!-- Left eye outer -->
+                <GeometryDrawing>
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="186,230" RadiusX="38" RadiusY="38"/>
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Brush>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#667eea" Offset="0"/>
+                            <GradientStop Color="#764ba2" Offset="0.5"/>
+                            <GradientStop Color="#f093fb" Offset="1"/>
+                        </LinearGradientBrush>
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+
+                <!-- Left eye inner (dark) -->
+                <GeometryDrawing Brush="#1a1a2e">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="186,230" RadiusX="28" RadiusY="28"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Left eye highlight -->
+                <GeometryDrawing>
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="195,220" RadiusX="12" RadiusY="12"/>
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Brush>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#4facfe" Offset="0"/>
+                            <GradientStop Color="#00f2fe" Offset="1"/>
+                        </LinearGradientBrush>
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+
+                <!-- Left eye sparkle -->
+                <GeometryDrawing Brush="White">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="200,215" RadiusX="5" RadiusY="5"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Right eye outer -->
+                <GeometryDrawing>
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="326,230" RadiusX="38" RadiusY="38"/>
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Brush>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#667eea" Offset="0"/>
+                            <GradientStop Color="#764ba2" Offset="0.5"/>
+                            <GradientStop Color="#f093fb" Offset="1"/>
+                        </LinearGradientBrush>
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+
+                <!-- Right eye inner (dark) -->
+                <GeometryDrawing Brush="#1a1a2e">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="326,230" RadiusX="28" RadiusY="28"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Right eye highlight -->
+                <GeometryDrawing>
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="335,220" RadiusX="12" RadiusY="12"/>
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Brush>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#4facfe" Offset="0"/>
+                            <GradientStop Color="#00f2fe" Offset="1"/>
+                        </LinearGradientBrush>
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+
+                <!-- Right eye sparkle -->
+                <GeometryDrawing Brush="White">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="340,215" RadiusX="5" RadiusY="5"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <!-- Mouth -->
+                <GeometryDrawing>
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="186,295,140,40" RadiusX="20" RadiusY="20"/>
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Brush>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#667eea" Offset="0"/>
+                            <GradientStop Color="#764ba2" Offset="0.5"/>
+                            <GradientStop Color="#f093fb" Offset="1"/>
+                        </LinearGradientBrush>
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+
+                <!-- Left ear -->
+                <GeometryDrawing>
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="96,200,25,80" RadiusX="10" RadiusY="10"/>
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Brush>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#4facfe" Offset="0"/>
+                            <GradientStop Color="#00f2fe" Offset="1"/>
+                        </LinearGradientBrush>
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+
+                <!-- Right ear -->
+                <GeometryDrawing>
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="391,200,25,80" RadiusX="10" RadiusY="10"/>
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Brush>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#4facfe" Offset="0"/>
+                            <GradientStop Color="#00f2fe" Offset="1"/>
+                        </LinearGradientBrush>
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+
+                <!-- Chat bubble -->
+                <GeometryDrawing>
+                    <GeometryDrawing.Geometry>
+                        <PathGeometry Figures="M360,100 L420,100 Q435,100 435,115 L435,145 Q435,160 420,160 L385,160 L375,175 L375,160 Q360,160 360,145 L360,115 Q360,100 375,100 Z"/>
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Brush>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#4facfe" Offset="0"/>
+                            <GradientStop Color="#00f2fe" Offset="1"/>
+                        </LinearGradientBrush>
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+
+                <!-- Chat bubble dots -->
+                <GeometryDrawing Brush="White">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="382,132" RadiusX="5" RadiusY="5"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Brush="White">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="398,132" RadiusX="5" RadiusY="5"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+                <GeometryDrawing Brush="White">
+                    <GeometryDrawing.Geometry>
+                        <EllipseGeometry Center="414,132" RadiusX="5" RadiusY="5"/>
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <!-- Simple Logo Path for small sizes -->
+    <PathGeometry x:Key="BotIconPath">
+        M12,2A2,2 0 0,1 14,4C14,4.74 13.6,5.39 13,5.73V7H14A7,7 0 0,1 21,14H22A1,1 0 0,1 23,15V18A1,1 0 0,1 22,19H21V20A2,2 0 0,1 19,22H5A2,2 0 0,1 3,20V19H2A1,1 0 0,1 1,18V15A1,1 0 0,1 2,14H3A7,7 0 0,1 10,7H11V5.73C10.4,5.39 10,4.74 10,4A2,2 0 0,1 12,2M7.5,13A2.5,2.5 0 0,0 5,15.5A2.5,2.5 0 0,0 7.5,18A2.5,2.5 0 0,0 10,15.5A2.5,2.5 0 0,0 7.5,13M16.5,13A2.5,2.5 0 0,0 14,15.5A2.5,2.5 0 0,0 16.5,18A2.5,2.5 0 0,0 19,15.5A2.5,2.5 0 0,0 16.5,13Z
+    </PathGeometry>
+
+</ResourceDictionary>

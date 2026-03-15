@@ -1,11 +1,26 @@
 # ArtaloBot - AI Assistant Desktop Application
 
 <p align="center">
-  <img src="docs/images/logo.png" alt="ArtaloBot Logo" width="120"/>
+  <img src="logo.png" alt="ArtaloBot Logo" width="150"/>
 </p>
+
+<h3 align="center">Your Intelligent Multi-LLM Desktop Assistant</h3>
 
 <p align="center">
   <strong>A powerful multi-LLM desktop application with knowledge base agents, multi-channel communication, and MCP skills support.</strong>
+</p>
+
+<p align="center">
+  <a href="https://drive.google.com/file/d/12VQDY87U3sYMmMaklxu6ejkuKkDt8QDx/view?usp=sharing">
+    <img src="https://img.shields.io/badge/Download-Windows%20Installer-blue?style=for-the-badge&logo=windows" alt="Download"/>
+  </a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/.NET-8.0-purple?style=flat-square&logo=dotnet" alt=".NET 8"/>
+  <img src="https://img.shields.io/badge/Platform-Windows-blue?style=flat-square&logo=windows" alt="Windows"/>
+  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="MIT License"/>
+  <img src="https://img.shields.io/badge/LLM-Ollama%20|%20OpenAI%20|%20Gemini-orange?style=flat-square" alt="LLM Support"/>
 </p>
 
 <p align="center">
@@ -95,16 +110,22 @@ ArtaloBot is a feature-rich Windows desktop application that provides a unified 
 
 ## Installation
 
-### Option 1: Download Pre-built Installer
+### Option 1: Download Pre-built Installer (Recommended)
 
-1. Download the latest release from the [Releases](https://github.com/your-repo/artalobot/releases) page
-2. Run `ArtaloBot-Setup.exe`
+<p align="center">
+  <a href="https://drive.google.com/file/d/12VQDY87U3sYMmMaklxu6ejkuKkDt8QDx/view?usp=sharing">
+    <strong>Download ArtaloBot Installer (Google Drive)</strong>
+  </a>
+</p>
+
+1. Download `ArtaloBot-Setup.exe` from the link above
+2. Run the installer
 3. Follow the installation wizard
 4. Launch ArtaloBot from the Start Menu or Desktop shortcut
 
 ### Option 2: Portable Version
 
-1. Download `ArtaloBot-Portable.zip` from [Releases](https://github.com/your-repo/artalobot/releases)
+1. Download `ArtaloBot-Portable.zip` from [Releases](https://github.com/anuragstpl/ArtaloAgent/releases)
 2. Extract to your desired location
 3. Run `ArtaloBot.App.exe`
 
