@@ -18,7 +18,11 @@
       "Bash(systeminfo:*)",
       "Bash(wmic:*)",
       "Bash(dotnet publish:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(git rm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }
